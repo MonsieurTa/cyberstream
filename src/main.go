@@ -1,11 +1,30 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	db "db"
+	"fmt"
+	"models"
+)
 
 func main() {
-	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "pong"})
+	db := db.NewDatabase()
+	db.AutoMigrate()
+
+	user, err := db.User.Create(&models.User{
+		FirstName: "William",
+		LastName:  "TA",
+		Contact: models.Contact{
+			Address: "10 impasse Jules Daunay",
+			Phone:   "nil",
+			Email:   "nil",
+		},
+		Credential: models.Credential{
+			UserName: "wta",
+			Password: []byte{},
+		},
 	})
-	r.Run()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%v\n", user)
 }
