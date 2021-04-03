@@ -2,13 +2,11 @@ FROM golang:1.16.2-buster as build
 
 WORKDIR /build
 
-COPY go.mod .
-COPY go.sum .
+ADD . .
+
 RUN go mod download
 
-COPY src .
-
-RUN go build -o hypertube .
+RUN go build -o hypertube api/*.go
 
 FROM debian:buster
 
