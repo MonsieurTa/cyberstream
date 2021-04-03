@@ -18,5 +18,5 @@ type Repository interface {
 
 //UseCase interface
 type UseCase interface {
-	CreateUser(c entity.User) (uuid.UUID, error)
+	RegisterUser(c entity.User) (uuid.UUID, error)
 }

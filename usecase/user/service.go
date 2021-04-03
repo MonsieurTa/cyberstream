@@ -15,7 +15,7 @@ func NewService(repo Repository) *Service {
 	}
 }
 
-func (s *Service) CreateUser(model entity.User) (uuid.UUID, error) {
+func (s *Service) RegisterUser(model entity.User) (uuid.UUID, error) {
 	id, err := s.repo.Create(&model)
 	if err != nil {
 		return id, err

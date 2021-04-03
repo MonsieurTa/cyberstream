@@ -24,7 +24,7 @@ func usersRegistration(service user.UseCase) gin.HandlerFunc {
 		}
 
 		input := validator.Value()
-		ID, err := service.CreateUser(input)
+		ID, err := service.RegisterUser(input)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, common.NewError("database", err))
 			return
