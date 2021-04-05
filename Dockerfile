@@ -1,19 +1,13 @@
-FROM golang:1.16.2-buster as build
+FROM golang:1.16.2-buster
 
-WORKDIR /build
+WORKDIR /app
 
 ADD . .
 
 RUN go mod download
 
-RUN go build -o hypertube api/*.go
-
-FROM debian:buster
-
-WORKDIR /app
-
-COPY --from=build /build/hypertube .
+RUN go get github.com/githubnemo/CompileDaemon
 
 EXPOSE 8080
 
-CMD ["/app/hypertube"]
+ENTRYPOINT CompileDaemon --build="go build -o hypertube api/main.go api/app.go" --command=./hypertube

@@ -1,10 +1,11 @@
 services:
     web-server:
-        image: hypertube
+        build: ./
         restart: always
-        command: /app/hypertube
         ports:
             - 3000:8080
+        volumes:
+            - ./:/app
     psql:
         image: postgres
         ports:
