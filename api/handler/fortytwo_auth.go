@@ -10,11 +10,11 @@ import (
 )
 
 func MakeFortyTwoAuthHandlers(g *gin.RouterGroup, service fortytwo.UseCase) {
-	g.GET("/fortytwo", accessTokenCallback(service))
+	g.GET("/fortytwo/callback", redirectCallback(service))
 	g.GET("/fortytwo/authorize_uri", getAuthorizeURI(service))
 }
 
-func accessTokenCallback(service fortytwo.UseCase) gin.HandlerFunc {
+func redirectCallback(service fortytwo.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		code := c.Query("code")
 		if code == "" {
@@ -27,10 +27,10 @@ func accessTokenCallback(service fortytwo.UseCase) gin.HandlerFunc {
 			return
 		}
 
-		token, err := service.Exchange(code, state)
+		token, err := service.GetAccessToken(code, state)
 		if err != nil {
 			cerr := common.NewError("auth", err)
-			c.JSON(http.StatusBadRequest, cerr)
+			c.JSON(http.StatusUnauthorized, cerr)
 			return
 		}
 		c.JSON(http.StatusOK, token)

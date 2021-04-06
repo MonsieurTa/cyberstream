@@ -15,5 +15,5 @@ type Repository interface {
 
 type UseCase interface {
 	GetAuthorizeURI() (string, error)
-	Exchange(code, state string) (*oauth2.Token, error)
+	GetAccessToken(code, state string) (*oauth2.Token, error)
 }

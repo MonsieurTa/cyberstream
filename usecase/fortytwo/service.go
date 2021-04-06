@@ -52,7 +52,7 @@ func NewService() *Service {
 	}
 }
 
-func (s *Service) Exchange(code, state string) (*oauth2.Token, error) {
+func (s *Service) GetAccessToken(code, state string) (*oauth2.Token, error) {
 	if err := s.stateManager.ValidateState(state); err != nil {
 		return nil, err
 	}
@@ -76,7 +76,6 @@ func (s *Service) Exchange(code, state string) (*oauth2.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	if resp.StatusCode != 200 {
 		return nil, errors.New(string(body))
 	}
@@ -86,7 +85,6 @@ func (s *Service) Exchange(code, state string) (*oauth2.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &token, nil
 }
 
