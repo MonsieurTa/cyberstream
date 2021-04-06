@@ -97,12 +97,12 @@ func (s *Service) GetAuthorizeURI() (string, error) {
 	s.stateManager.SaveStateInMemory(state)
 
 	params := "client_id=%s&redirect_uri=%s&state=%s&response_type=code"
-	uri := fmt.Sprintf(
+	params = fmt.Sprintf(
 		params,
 		config.PROVIDER_42_CLIENT_ID,
 		config.PROVIDER_42_REDIRECT_URI,
 		state,
 	)
-	rv := config.PROVIDER_42_AUTH_URI + "?" + uri
+	rv := config.PROVIDER_42_AUTH_URI + "?" + params
 	return rv, nil
 }
