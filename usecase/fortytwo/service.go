@@ -3,17 +3,26 @@ package fortytwo
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/MonsieurTa/hypertube/config"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
 type Service struct {
-	client *http.Client
+	client       *http.Client
+	stateManager *StateManager
 }
+
+const (
+	DEFAULT_STATE_SIZE = 64
+)
 
 func createAuthClient() *http.Client {
 	ctx := context.Background()
@@ -38,6 +47,64 @@ func createAuthClient() *http.Client {
 
 func NewService() *Service {
 	return &Service{
-		client: createAuthClient(),
+		client:       createAuthClient(),
+		stateManager: NewStateManager(),
 	}
+}
+
+func (s *Service) Exchange(code, state string) (*oauth2.Token, error) {
+	if err := s.stateManager.ValidateState(state); err != nil {
+		return nil, err
+	}
+	s.stateManager.DeleteStateInMemory(state)
+
+	form := url.Values{
+		"grant_type":    {"authorization_code"},
+		"client_id":     {config.PROVIDER_42_CLIENT_ID},
+		"client_secret": {config.PROVIDER_42_SECRET},
+		"code":          {code},
+		"redirect_uri":  {config.PROVIDER_42_REDIRECT_URI},
+		"state":         {state},
+	}
+
+	resp, err := s.client.PostForm("https://api.intra.42.fr/oauth/token", form)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, errors.New(string(body))
+	}
+
+	var token oauth2.Token
+	err = json.Unmarshal(body, &token)
+	if err != nil {
+		return nil, err
+	}
+
+	return &token, nil
+}
+
+func (s *Service) GetAuthorizeURI() (string, error) {
+	state, err := generateState(DEFAULT_STATE_SIZE)
+	if err != nil {
+		return "", err
+	}
+
+	s.stateManager.SaveStateInMemory(state)
+
+	params := "client_id=%s&redirect_uri=%s&state=%s&response_type=code"
+	uri := fmt.Sprintf(
+		params,
+		config.PROVIDER_42_CLIENT_ID,
+		config.PROVIDER_42_REDIRECT_URI,
+		state,
+	)
+	rv := config.PROVIDER_42_AUTH_URI + "?" + uri
+	return rv, nil
 }
