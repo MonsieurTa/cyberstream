@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/MonsieurTa/hypertube/api/handler"
 	"github.com/MonsieurTa/hypertube/infrastructure/repository"
+	"github.com/MonsieurTa/hypertube/usecase/fortytwo"
 	"github.com/MonsieurTa/hypertube/usecase/user"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -26,7 +27,10 @@ func (a *App) MakeHandlers() {
 	userRepo := repository.NewUserGORM(a.db)
 	userService := user.NewService(userRepo)
 
+	ftService := fortytwo.NewService()
+
 	handler.MakeUsersHandlers(v1.Group("/users"), userService)
+	handler.MakeFortyTwoAuthHandlers(v1.Group("/auth"), ftService)
 }
 
 func (a *App) Run() error {
