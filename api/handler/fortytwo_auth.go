@@ -17,13 +17,9 @@ func MakeFortyTwoAuthHandlers(g *gin.RouterGroup, service fortytwo.UseCase) {
 func redirectCallback(service fortytwo.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		code := c.Query("code")
-		if code == "" {
-			c.JSON(http.StatusBadRequest, errors.New("code invalid"))
-			return
-		}
 		state := c.Query("state")
-		if state == "" {
-			c.JSON(http.StatusBadRequest, errors.New("state invalid"))
+		if code == "" || state == "" {
+			c.JSON(http.StatusBadRequest, common.NewError("auth", errors.New("code or state invalid")))
 			return
 		}
 
