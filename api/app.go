@@ -27,7 +27,7 @@ func (a *App) MakeHandlers() {
 	userRepo := repository.NewUserGORM(a.db)
 	userService := user.NewService(userRepo)
 
-	ftService := fortytwo.NewService()
+	ftService, _ := fortytwo.NewService()
 
 	handler.MakeUsersHandlers(v1.Group("/users"), userService)
 	handler.MakeFortyTwoAuthHandlers(v1.Group("/auth"), ftService)
