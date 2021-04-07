@@ -19,7 +19,7 @@ func redirectCallback(service fortytwo.UseCase) gin.HandlerFunc {
 		code := c.Query("code")
 		state := c.Query("state")
 		if code == "" || state == "" {
-			c.JSON(http.StatusBadRequest, common.NewError("auth", errors.New("code or state invalid")))
+			c.JSON(http.StatusBadRequest, common.NewError("auth", errors.New("invalid_parameter")))
 			return
 		}
 
