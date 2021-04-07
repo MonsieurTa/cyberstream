@@ -20,6 +20,13 @@ type Service struct {
 	stateManager *StateManager
 }
 
+type Token struct {
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+}
+
 const (
 	DEFAULT_STATE_SIZE = 64
 )
@@ -80,7 +87,7 @@ func (s *Service) GetAccessToken(code, state string) (*oauth2.Token, error) {
 		return nil, errors.New(string(body))
 	}
 
-	var token oauth2.Token
+	var token Token
 	err = json.Unmarshal(body, &token)
 	if err != nil {
 		return nil, err
