@@ -6,12 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/MonsieurTa/hypertube/config"
-	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -31,35 +29,18 @@ const (
 	DEFAULT_STATE_SIZE = 64
 )
 
-func createAuthClient() *http.Client {
-	ctx := context.Background()
-
-	conf := clientcredentials.Config{
-		ClientID:     config.PROVIDER_42_CLIENT_ID,
-		ClientSecret: config.PROVIDER_42_SECRET,
-		TokenURL:     "https://api.intra.42.fr/oauth/token",
-	}
-	token, err := conf.Token(ctx)
+func NewService() (*Service, error) {
+	authClient, err := createAuthClient()
 	if err != nil {
-		log.Fatalf("could not get 42 provider oauth token")
+		return nil, err
 	}
-
-	tokenJSON, err := json.MarshalIndent(token, "", "\t")
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-	fmt.Printf("Using 42 oauth2 client credential:\n%s\n", string(tokenJSON))
-	return conf.Client(ctx)
-}
-
-func NewService() *Service {
 	return &Service{
-		client:       createAuthClient(),
+		client:       authClient,
 		stateManager: NewStateManager(),
-	}
+	}, nil
 }
 
-func (s *Service) GetAccessToken(code, state string) (*oauth2.Token, error) {
+func (s *Service) GetAccessToken(code, state string) (*Token, error) {
 	if err := s.stateManager.ValidateState(state); err != nil {
 		return nil, err
 	}
@@ -80,6 +61,7 @@ func (s *Service) GetAccessToken(code, state string) (*oauth2.Token, error) {
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
+
 	if err != nil {
 		return nil, err
 	}
@@ -112,4 +94,25 @@ func (s *Service) GetAuthorizeURI() (string, error) {
 	)
 	rv := config.PROVIDER_42_AUTH_URI + "?" + params
 	return rv, nil
+}
+
+func createAuthClient() (*http.Client, error) {
+	ctx := context.Background()
+
+	conf := clientcredentials.Config{
+		ClientID:     config.PROVIDER_42_CLIENT_ID,
+		ClientSecret: config.PROVIDER_42_SECRET,
+		TokenURL:     "https://api.intra.42.fr/oauth/token",
+	}
+	token, err := conf.Token(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	tokenJSON, err := json.MarshalIndent(token, "", "\t")
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("Using 42 oauth2 client credential:\n%s\n", string(tokenJSON))
+	return conf.Client(ctx), nil
 }
