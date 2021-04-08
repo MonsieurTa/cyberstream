@@ -10,6 +10,6 @@ type Repository interface {
 }
 
 type UseCase interface {
-	GetAuthorizeURI() (string, error)
+	GetAuthorizeURI(state string) (string, error)
 	GetAccessToken(code, state string) (*Token, error)
 }
