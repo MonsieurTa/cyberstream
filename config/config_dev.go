@@ -5,7 +5,7 @@ const (
 	SQLITE_URI = "sqlite3"
 	SQLITE_DB  = "test.db"
 
-	POSTGRES_DB       = "docker"
+	POSTGRES_DB       = "hypertube"
 	POSTGRES_USER     = "docker"
 	POSTGRES_PASSWORD = "secret"
 	POSTGRES_HOST     = "psql"
