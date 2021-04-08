@@ -10,7 +10,7 @@ func NewService(repo Repository) *Service {
 	}
 }
 
-func (s *Service) Exist(state string) error {
+func (s *Service) Validate(state string) error {
 	return s.repo.Exist(state)
 }
 func (s *Service) Save(state string) {
