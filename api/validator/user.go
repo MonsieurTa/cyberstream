@@ -15,7 +15,7 @@ type UserRegistrationValidator struct {
 			Email     string `json:"email"`
 		} `json:"public_info"`
 		Credential struct {
-			Username string `json:"Username"`
+			Username string `json:"username"`
 			Password string `json:"password"`
 		} `json:"credential"`
 	} `json:"user"`
