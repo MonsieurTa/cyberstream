@@ -5,6 +5,7 @@ import (
 	"github.com/MonsieurTa/hypertube/config"
 	"github.com/MonsieurTa/hypertube/infrastructure/repository"
 	"github.com/MonsieurTa/hypertube/usecase/fortytwo"
+	"github.com/MonsieurTa/hypertube/usecase/state"
 	"github.com/MonsieurTa/hypertube/usecase/user"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -30,8 +31,11 @@ func (a *App) MakeHandlers() {
 
 	ftService, _ := fortytwo.NewService()
 
+	stateRepo := repository.NewStateInMem()
+	stateService := state.NewService(stateRepo)
+
 	handler.MakeUsersHandlers(v1.Group("/users"), userService)
-	handler.MakeFortyTwoAuthHandlers(v1.Group("/auth"), ftService)
+	handler.MakeFortyTwoAuthHandlers(v1.Group("/auth"), ftService, stateService)
 }
 
 func (a *App) Run() error {
