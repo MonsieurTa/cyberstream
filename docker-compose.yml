@@ -1,21 +1,25 @@
 services:
-    web-server:
-        build: ./
-        restart: always
-        ports:
-            - 3000:8080
-        volumes:
-            - ./:/app
     psql:
         image: postgres
         ports:
             - 5432:5432
+        volumes:
+            - hypertube-data:/var/lib/psql
+            # - ./scripts/pg-init-scripts:/docker-entrypoint-initdb.d
         environment:
             POSTGRES_USER: docker
             POSTGRES_PASSWORD: secret
-            POSTGRES_DB: docker
+            POSTGRES_DB: hypertube
+            # POSTGRES_MULTIPLE_DATABASES: hypertube, keycloak
+    web-server:
+        restart: always
+        build: ./
+        ports:
+            - 3000:3000
         volumes:
-            - hypertube-data:/var/lib/sql
+            - ./:/app
+        depends_on:
+            - psql
 
 volumes:
     hypertube-data:
