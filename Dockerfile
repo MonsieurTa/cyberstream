@@ -8,6 +8,6 @@ RUN go mod download
 
 RUN go get github.com/githubnemo/CompileDaemon
 
-EXPOSE 8080
+EXPOSE 3000
 
 ENTRYPOINT CompileDaemon --build="go build -o hypertube api/main.go api/app.go" --command=./hypertube
