@@ -57,6 +57,7 @@ func (s *Service) GetAccessToken(code, state string) (*Token, error) {
 		return nil, err
 	}
 
+	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
