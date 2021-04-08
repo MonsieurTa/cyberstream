@@ -1,6 +1,7 @@
 package config
 
 const (
+	PORT       = ":3000"
 	SQLITE_URI = "sqlite3"
 	SQLITE_DB  = "test.db"
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/MonsieurTa/hypertube/api/handler"
+	"github.com/MonsieurTa/hypertube/config"
 	"github.com/MonsieurTa/hypertube/infrastructure/repository"
 	"github.com/MonsieurTa/hypertube/usecase/fortytwo"
 	"github.com/MonsieurTa/hypertube/usecase/user"
@@ -34,5 +35,5 @@ func (a *App) MakeHandlers() {
 }
 
 func (a *App) Run() error {
-	return a.router.Run()
+	return a.router.Run(config.PORT)
 }
