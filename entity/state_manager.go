@@ -1,4 +1,4 @@
-package fortytwo
+package entity
 
 import (
 	"crypto/rand"
@@ -11,6 +11,10 @@ import (
 type StateManager struct {
 	states map[string]bool
 }
+
+const (
+	DEFAULT_STATE_SIZE = 64
+)
 
 func NewStateManager() *StateManager {
 	return &StateManager{
@@ -33,8 +37,8 @@ func (s *StateManager) ValidateState(state string) error {
 	return nil
 }
 
-func generateState(n int) (string, error) {
-	data := make([]byte, n)
+func GenerateState() (string, error) {
+	data := make([]byte, DEFAULT_STATE_SIZE)
 	if _, err := io.ReadFull(rand.Reader, data); err != nil {
 		return "", err
 	}

@@ -10,12 +10,13 @@ import (
 	"net/url"
 
 	"github.com/MonsieurTa/hypertube/config"
+	"github.com/MonsieurTa/hypertube/entity"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
 type Service struct {
 	client       *http.Client
-	stateManager *StateManager
+	stateManager *entity.StateManager
 }
 
 type Token struct {
@@ -25,10 +26,6 @@ type Token struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-const (
-	DEFAULT_STATE_SIZE = 64
-)
-
 func NewService() (*Service, error) {
 	authClient, err := createAuthClient()
 	if err != nil {
@@ -36,7 +33,7 @@ func NewService() (*Service, error) {
 	}
 	return &Service{
 		client:       authClient,
-		stateManager: NewStateManager(),
+		stateManager: entity.NewStateManager(),
 	}, nil
 }
 
@@ -78,7 +75,7 @@ func (s *Service) GetAccessToken(code, state string) (*Token, error) {
 }
 
 func (s *Service) GetAuthorizeURI() (string, error) {
-	state, err := generateState(DEFAULT_STATE_SIZE)
+	state, err := entity.GenerateState()
 	if err != nil {
 		return "", err
 	}
