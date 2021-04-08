@@ -20,7 +20,7 @@ type UserRegistrationValidator struct {
 		} `json:"credential"`
 	} `json:"user"`
 
-	output *entity.User `json:"-"`
+	output entity.User `json:"-"`
 }
 
 func NewUserRegistrationValidator() *UserRegistrationValidator {
@@ -40,13 +40,14 @@ func (v *UserRegistrationValidator) Validate(c *gin.Context) error {
 		Username:  v.User.Credential.Username,
 		Password:  v.User.Credential.Password,
 	}
-	v.output, err = entity.NewUser(input)
+	output, err := entity.NewUser(input)
 	if err != nil {
 		return err
 	}
+	v.output = *output
 	return nil
 }
 
 func (v UserRegistrationValidator) Value() entity.User {
-	return *v.output
+	return v.output
 }
