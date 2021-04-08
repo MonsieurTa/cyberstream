@@ -10,13 +10,11 @@ import (
 	"net/url"
 
 	"github.com/MonsieurTa/hypertube/config"
-	"github.com/MonsieurTa/hypertube/entity"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
 type Service struct {
-	client       *http.Client
-	stateManager *entity.StateManager
+	client *http.Client
 }
 
 type Token struct {
@@ -32,17 +30,11 @@ func NewService() (*Service, error) {
 		return nil, err
 	}
 	return &Service{
-		client:       authClient,
-		stateManager: entity.NewStateManager(),
+		client: authClient,
 	}, nil
 }
 
 func (s *Service) GetAccessToken(code, state string) (*Token, error) {
-	if err := s.stateManager.ValidateState(state); err != nil {
-		return nil, err
-	}
-	s.stateManager.DeleteStateInMemory(state)
-
 	form := url.Values{
 		"grant_type":    {"authorization_code"},
 		"client_id":     {config.PROVIDER_42_CLIENT_ID},
@@ -75,14 +67,7 @@ func (s *Service) GetAccessToken(code, state string) (*Token, error) {
 	return &token, nil
 }
 
-func (s *Service) GetAuthorizeURI() (string, error) {
-	state, err := entity.GenerateState()
-	if err != nil {
-		return "", err
-	}
-
-	s.stateManager.SaveStateInMemory(state)
-
+func (s *Service) GetAuthorizeURI(state string) (string, error) {
 	params := "client_id=%s&redirect_uri=%s&state=%s&response_type=code"
 	params = fmt.Sprintf(
 		params,
