@@ -1,5 +1,11 @@
 package authentication
 
+import (
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
+)
+
 type Reader interface {
 	Validate(username, password string) error
 }
@@ -13,5 +19,5 @@ type Repository interface {
 
 type UseCase interface {
 	Authenticate(username, password string) error
-	GenerateAccessToken()
+	GenerateAccessToken(username string, expiresAt time.Time) *jwt.Token
 }
