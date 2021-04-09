@@ -11,15 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func MakeFortyTwoAuthHandlers(
-	g *gin.RouterGroup,
-	ftService fortytwo.UseCase,
-	stateService state.UseCase,
-) {
-	g.GET("/fortytwo/callback", redirectCallback(ftService, stateService))
-	g.GET("/fortytwo/authorize_uri", getAuthorizeURI(ftService, stateService))
-}
-
 func redirectCallback(ftService fortytwo.UseCase, stateService state.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// TODO: create a specific validator
@@ -50,6 +41,12 @@ func redirectCallback(ftService fortytwo.UseCase, stateService state.UseCase) gi
 func getAuthorizeURI(ftService fortytwo.UseCase, stateService state.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		state, err := repository.GenerateState()
+		if err != nil {
+			cerr := common.NewError("auth", err)
+			c.JSON(http.StatusInternalServerError, cerr)
+			return
+		}
+
 		uri, err := ftService.GetAuthorizeURI(state)
 		if err != nil {
 			cerr := common.NewError("auth", err)

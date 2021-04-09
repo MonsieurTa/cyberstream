@@ -4,6 +4,7 @@ import (
 	"github.com/MonsieurTa/hypertube/api/handler"
 	"github.com/MonsieurTa/hypertube/config"
 	"github.com/MonsieurTa/hypertube/infrastructure/repository"
+	auth "github.com/MonsieurTa/hypertube/usecase/authentication"
 	"github.com/MonsieurTa/hypertube/usecase/fortytwo"
 	"github.com/MonsieurTa/hypertube/usecase/state"
 	"github.com/MonsieurTa/hypertube/usecase/user"
@@ -31,11 +32,14 @@ func (a *App) MakeHandlers() {
 
 	ftService, _ := fortytwo.NewService()
 
-	stateRepo := repository.NewStateInMem()
-	stateService := state.NewService(stateRepo)
+	stateInMem := repository.NewStateInMem()
+	stateService := state.NewService(stateInMem)
+
+	credentialRepo := repository.NewCredentialGORM(a.db)
+	authService := auth.NewService(credentialRepo)
 
 	handler.MakeUsersHandlers(v1.Group("/users"), userService)
-	handler.MakeFortyTwoAuthHandlers(v1.Group("/auth"), ftService, stateService)
+	handler.MakeOAuth2Handlers(v1.Group("/oauth"), ftService, stateService, authService)
 }
 
 func (a *App) Run() error {
