@@ -17,7 +17,7 @@ type UserRegistrationValidator struct {
 		Credential struct {
 			Username string `json:"username"`
 			Password string `json:"password"`
-		} `json:"credential"`
+		} `json:"credentials"`
 	} `json:"user"`
 
 	output entity.User `json:"-"`
