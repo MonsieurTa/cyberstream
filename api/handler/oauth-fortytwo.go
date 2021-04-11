@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func redirectCallback(ftService fortytwo.UseCase, stateService state.UseCase) gin.HandlerFunc {
+func RedirectCallback(ftService fortytwo.UseCase, stateService state.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// TODO: create a specific validator
 		code := c.Query("code")
@@ -38,7 +38,7 @@ func redirectCallback(ftService fortytwo.UseCase, stateService state.UseCase) gi
 	}
 }
 
-func getAuthorizeURI(ftService fortytwo.UseCase, stateService state.UseCase) gin.HandlerFunc {
+func GetAuthorizeURI(ftService fortytwo.UseCase, stateService state.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		state, err := repository.GenerateState()
 		if err != nil {

@@ -8,24 +8,10 @@ import (
 	"github.com/MonsieurTa/hypertube/api/validator"
 	"github.com/MonsieurTa/hypertube/config"
 	auth "github.com/MonsieurTa/hypertube/usecase/authentication"
-	"github.com/MonsieurTa/hypertube/usecase/fortytwo"
-	"github.com/MonsieurTa/hypertube/usecase/state"
 	"github.com/gin-gonic/gin"
 )
 
-func MakeOAuth2Handlers(
-	g *gin.RouterGroup,
-	ftService fortytwo.UseCase,
-	stateService state.UseCase,
-	service auth.UseCase,
-) {
-	g.POST("/token", accessTokenGeneration(service))
-
-	g.GET("/fortytwo/callback", redirectCallback(ftService, stateService))
-	g.GET("/fortytwo/authorize_uri", getAuthorizeURI(ftService, stateService))
-}
-
-func accessTokenGeneration(service auth.UseCase) gin.HandlerFunc {
+func AccessTokenGeneration(service auth.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		validator := validator.NewUserCredentialValidator()
 

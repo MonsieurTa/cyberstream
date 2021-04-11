@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	a "github.com/MonsieurTa/hypertube/api/app"
 	"github.com/MonsieurTa/hypertube/api/validator"
 	"github.com/MonsieurTa/hypertube/config"
 	"github.com/MonsieurTa/hypertube/entity"
@@ -40,9 +41,11 @@ func main() {
 	router := gin.Default()
 	validator.RegisterCustomValidations(router)
 
-	app := NewApp(db, router)
+	app, err := a.NewApp(db, router)
+	if err != nil {
+		panic(err)
+	}
 
 	app.MakeHandlers()
-
 	app.Run()
 }
