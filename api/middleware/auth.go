@@ -3,7 +3,6 @@ package middleware
 import (
 	"net/http"
 
-	auth "github.com/MonsieurTa/hypertube/usecase/authentication"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
 	"github.com/gin-gonic/gin"
@@ -18,11 +17,12 @@ func secretGiver(secret string) jwt.Keyfunc {
 
 func Auth(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		claims := &auth.Claims{}
+		claims := &jwt.StandardClaims{}
 
-		_, err := request.ParseFromRequestWithClaims(c.Request, request.OAuth2Extractor, claims, secretGiver(secret))
+		_, err := request.ParseFromRequest(c.Request, request.OAuth2Extractor, secretGiver(secret), request.WithClaims(claims))
 		if err != nil {
 			c.AbortWithError(http.StatusUnauthorized, err)
 		}
+		c.Set("token", claims)
 	}
 }
