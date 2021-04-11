@@ -44,3 +44,13 @@ func (c *Credential) CheckPassword(password string) error {
 	byteHashedPassword := []byte(c.PasswordHash)
 	return bcrypt.CompareHashAndPassword(byteHashedPassword, bytePassword)
 }
+
+func (c *Credential) Update(newUsername, newPassword string) error {
+	if len(newUsername) > 0 {
+		c.Username = newUsername
+	}
+	if len(newPassword) > 0 {
+		return c.SetPassword(newPassword)
+	}
+	return nil
+}

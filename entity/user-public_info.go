@@ -31,3 +31,12 @@ func NewPublicInfo(userID uuid.UUID, firstname, lastname, phone, email string) *
 func (p PublicInfo) FullName() string {
 	return p.FirstName + " " + p.LastName
 }
+
+func (p *PublicInfo) Update(email, pictureURL string) {
+	if len(email) > 0 {
+		p.Email = email
+	}
+	if len(pictureURL) > 0 {
+		p.PictureURL = pictureURL
+	}
+}
