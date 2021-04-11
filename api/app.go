@@ -35,8 +35,7 @@ func (a *App) MakeHandlers() {
 	stateInMem := repository.NewStateInMem()
 	stateService := state.NewService(stateInMem)
 
-	credentialRepo := repository.NewCredentialGORM(a.db)
-	authService := auth.NewService(credentialRepo)
+	authService := auth.NewService(userRepo)
 
 	handler.MakeUsersHandlers(v1.Group("/users"), userService)
 	handler.MakeOAuth2Handlers(v1.Group("/oauth"), ftService, stateService, authService)
