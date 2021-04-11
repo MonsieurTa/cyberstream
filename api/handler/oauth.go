@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -37,20 +36,19 @@ func accessTokenGeneration(service auth.UseCase) gin.HandlerFunc {
 		}
 
 		input := validator.Value()
-		fmt.Printf("request input %v\n", input)
-		err = service.Authenticate(input.Username, input.Password)
+
+		userID, err := service.Authenticate(input.Username, input.Password)
 		if err != nil {
 			c.JSON(http.StatusNotFound, common.NewError("auth", err))
 			return
 		}
 
 		expiresAt := time.Now().Add(5 * time.Minute)
-		token := service.GenerateAccessToken(input.Username, expiresAt)
+		token := service.GenerateAccessToken(userID, expiresAt)
 		tokenString, err := token.SignedString([]byte(config.JWT_SECRET))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, common.NewError("auth", err))
 		}
-
-		c.SetCookie("token", tokenString, int(expiresAt.Unix()), "/", "localhost", true, true)
+		c.Header("Authorization", `Bearer `+tokenString)
 	}
 }
