@@ -4,15 +4,11 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 )
 
 type Service struct {
 	repo Repository
-}
-
-type Claims struct {
-	Username string `json:"username"`
-	jwt.StandardClaims
 }
 
 func NewService(repo Repository) *Service {
@@ -21,16 +17,14 @@ func NewService(repo Repository) *Service {
 	}
 }
 
-func (s *Service) Authenticate(username, password string) error {
-	return s.repo.Validate(username, password)
+func (s *Service) Authenticate(username, password string) (*uuid.UUID, error) {
+	return s.repo.CredentialsExist(username, password)
 }
 
-func (s *Service) GenerateAccessToken(username string, expiresAt time.Time) *jwt.Token {
-	claims := &Claims{
-		Username: username,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expiresAt.Unix(),
-		},
+func (s *Service) GenerateAccessToken(userID *uuid.UUID, expiresAt time.Time) *jwt.Token {
+	claims := jwt.StandardClaims{
+		Audience:  userID.String(),
+		ExpiresAt: expiresAt.Unix(),
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 }

@@ -4,10 +4,11 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 )
 
 type Reader interface {
-	Validate(username, password string) error
+	CredentialsExist(username, password string) (*uuid.UUID, error)
 }
 
 type Writer interface{}
@@ -18,6 +19,6 @@ type Repository interface {
 }
 
 type UseCase interface {
-	Authenticate(username, password string) error
-	GenerateAccessToken(username string, expiresAt time.Time) *jwt.Token
+	Authenticate(username, password string) (*uuid.UUID, error)
+	GenerateAccessToken(userID *uuid.UUID, expiresAt time.Time) *jwt.Token
 }

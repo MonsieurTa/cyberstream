@@ -15,10 +15,18 @@ func NewService(repo Repository) *Service {
 	}
 }
 
-func (s *Service) RegisterUser(model entity.User) (uuid.UUID, error) {
-	id, err := s.repo.Create(&model)
+func (s *Service) RegisterUser(model entity.User) (*uuid.UUID, error) {
+	ID, err := s.repo.Create(&model)
 	if err != nil {
-		return id, err
+		return nil, err
 	}
-	return id, nil
+	return ID, nil
+}
+
+func (s *Service) UpdateCredentials(userID *uuid.UUID, username, password string) error {
+	return s.repo.UpdateCredentials(userID, username, password)
+}
+
+func (s *Service) UpdatePublicInfo(userID *uuid.UUID, email, pictureURL string) error {
+	return s.repo.UpdatePublicInfo(userID, email, pictureURL)
 }

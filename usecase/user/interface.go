@@ -5,10 +5,14 @@ import (
 	"github.com/google/uuid"
 )
 
-type Reader interface{}
+type Reader interface {
+	CredentialsExist(username, password string) (*uuid.UUID, error)
+}
 
 type Writer interface {
-	Create(e *entity.User) (uuid.UUID, error)
+	Create(e *entity.User) (*uuid.UUID, error)
+	UpdateCredentials(userID *uuid.UUID, username, password string) error
+	UpdatePublicInfo(userID *uuid.UUID, email, pictureURL string) error
 }
 
 type Repository interface {
@@ -18,5 +22,7 @@ type Repository interface {
 
 //UseCase interface
 type UseCase interface {
-	RegisterUser(c entity.User) (uuid.UUID, error)
+	RegisterUser(c entity.User) (*uuid.UUID, error)
+	UpdateCredentials(userID *uuid.UUID, username, password string) error
+	UpdatePublicInfo(userID *uuid.UUID, email, pictureURL string) error
 }
