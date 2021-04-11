@@ -8,7 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Credential struct {
+type Credentials struct {
 	ID           uuid.UUID `gorm:"column:id;type:uuid;not null"`
 	UserID       uuid.UUID `gorm:"column:user_id"`
 	Username     string    `gorm:"column:username;unique"`
@@ -16,8 +16,8 @@ type Credential struct {
 	UpdatedAt    time.Time `gorm:"column:updated_at"`
 }
 
-func NewCredential(userID uuid.UUID, Username, password string) (*Credential, error) {
-	v := Credential{
+func NewCredentials(userID uuid.UUID, Username, password string) (*Credentials, error) {
+	v := Credentials{
 		ID:       uuid.New(),
 		UserID:   userID,
 		Username: Username,
@@ -29,7 +29,7 @@ func NewCredential(userID uuid.UUID, Username, password string) (*Credential, er
 	return &v, nil
 }
 
-func (c *Credential) SetPassword(password string) error {
+func (c *Credentials) SetPassword(password string) error {
 	if len(password) == 0 {
 		return errors.New("password should not be empty")
 	}
@@ -39,13 +39,13 @@ func (c *Credential) SetPassword(password string) error {
 	return nil
 }
 
-func (c *Credential) CheckPassword(password string) error {
+func (c *Credentials) CheckPassword(password string) error {
 	bytePassword := []byte(password)
 	byteHashedPassword := []byte(c.PasswordHash)
 	return bcrypt.CompareHashAndPassword(byteHashedPassword, bytePassword)
 }
 
-func (c *Credential) Update(newUsername, newPassword string) error {
+func (c *Credentials) Update(newUsername, newPassword string) error {
 	if len(newUsername) > 0 {
 		c.Username = newUsername
 	}

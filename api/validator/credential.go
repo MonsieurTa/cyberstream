@@ -6,7 +6,7 @@ import (
 )
 
 type UserCredentialValidator struct {
-	Credential struct {
+	Credentials struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	} `json:"credentials"`
@@ -29,8 +29,8 @@ func (v *UserCredentialValidator) Validate(c *gin.Context) error {
 		return err
 	}
 
-	v.output.Username = v.Credential.Username
-	v.output.Password = v.Credential.Password
+	v.output.Username = v.Credentials.Username
+	v.output.Password = v.Credentials.Password
 	return nil
 }
 

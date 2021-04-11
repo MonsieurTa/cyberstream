@@ -18,7 +18,7 @@ type UserRegistrationValidator struct {
 			Phone     string `json:"phone"`
 			Email     string `json:"email"`
 		} `json:"public_info"`
-		Credential struct {
+		Credentials struct {
 			Username string `json:"username"`
 			Password string `json:"password"`
 		} `json:"credentials"`
@@ -41,8 +41,8 @@ func (v *UserRegistrationValidator) Validate(c *gin.Context) error {
 		LastName:  v.User.PublicInfo.LastName,
 		Phone:     v.User.PublicInfo.Phone,
 		Email:     v.User.PublicInfo.Email,
-		Username:  v.User.Credential.Username,
-		Password:  v.User.Credential.Password,
+		Username:  v.User.Credentials.Username,
+		Password:  v.User.Credentials.Password,
 	}
 	output, err := entity.NewUser(input)
 	if err != nil {

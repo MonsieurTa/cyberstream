@@ -96,6 +96,6 @@ func createAuthClient() (*http.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("Using 42 oauth2 client credential:\n%s\n", string(tokenJSON))
+	fmt.Printf("Using 42 oauth2 client credentials:\n%s\n", string(tokenJSON))
 	return conf.Client(ctx), nil
 }
