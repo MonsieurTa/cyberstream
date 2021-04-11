@@ -36,7 +36,29 @@ func (u UserGORM) CredentialsExist(username, password string) (*uuid.UUID, error
 	}
 	return &credential.UserID, nil
 }
-		return user.ID, result.Error
+
+func (u UserGORM) UpdateCredentials(userID *uuid.UUID, username, password string) error {
+	credential := entity.Credential{}
+
+	err := u.db.First(&credential, "user_id = ?", userID).Error
+	if err != nil {
+		return err
 	}
-	return user.ID, nil
+
+	err = credential.Update(username, password)
+	if err != nil {
+		return err
+	}
+	return u.db.Model(&credential).Updates(credential).Error
+}
+
+func (u UserGORM) UpdatePublicInfo(userID *uuid.UUID, email, pictureURL string) error {
+	publicInfo := entity.PublicInfo{}
+
+	err := u.db.First(&publicInfo, "user_id = ?", userID).Error
+	if err != nil {
+		return err
+	}
+	publicInfo.Update(email, pictureURL)
+	return u.db.Model(&publicInfo).Updates(publicInfo).Error
 }
