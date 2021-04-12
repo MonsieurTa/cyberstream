@@ -6,20 +6,20 @@ import (
 	a "github.com/MonsieurTa/hypertube/api/app"
 	"github.com/MonsieurTa/hypertube/api/validator"
 	"github.com/MonsieurTa/hypertube/config"
-	"github.com/MonsieurTa/hypertube/entity"
+	"github.com/MonsieurTa/hypertube/infrastructure/model"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func Migrate(db *gorm.DB) error {
-	if err := db.AutoMigrate(&entity.User{}); err != nil {
+	if err := db.AutoMigrate(model.UserModelGORM()); err != nil {
 		return err
 	}
-	if err := db.AutoMigrate(&entity.Credentials{}); err != nil {
+	if err := db.AutoMigrate(model.CredentialsModelGORM()); err != nil {
 		return err
 	}
-	if err := db.AutoMigrate(&entity.PublicInfo{}); err != nil {
+	if err := db.AutoMigrate(model.PublicInfoModelGORM()); err != nil {
 		return err
 	}
 	return nil
