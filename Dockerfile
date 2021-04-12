@@ -10,4 +10,4 @@ RUN go get github.com/githubnemo/CompileDaemon
 
 EXPOSE 3000
 
-ENTRYPOINT CompileDaemon --build="go build -o hypertube api/main.go api/app.go" --command=./hypertube
+ENTRYPOINT CompileDaemon --build="go build -o hypertube api/main.go" --command=./hypertube
