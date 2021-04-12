@@ -7,10 +7,10 @@ import (
 )
 
 type User struct {
-	ID          uuid.UUID `gorm:"column:id;type:uuid;not null"`
+	ID          uuid.UUID
 	PublicInfo  PublicInfo
 	Credentials Credentials
-	CreatedAt   time.Time `gorm:"column:created_at"`
+	CreatedAt   time.Time
 }
 
 type CreateUserT struct {
@@ -34,4 +34,15 @@ func NewUser(c CreateUserT) (*User, error) {
 		Credentials: *credentials,
 		PublicInfo:  *publicInfo,
 	}, nil
+}
+
+func (u *User) FillWith(c CreateUserT) error {
+	u.ID = uuid.New()
+
+	err := u.Credentials.FillWith(u.ID, c.Username, c.Password)
+	if err != nil {
+		return err
+	}
+	u.PublicInfo.FillWith(u.ID, c.FirstName, c.LastName, c.Phone, c.Email)
+	return nil
 }

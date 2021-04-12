@@ -9,11 +9,11 @@ import (
 )
 
 type Credentials struct {
-	ID           uuid.UUID `gorm:"column:id;type:uuid;not null"`
-	UserID       uuid.UUID `gorm:"column:user_id"`
-	Username     string    `gorm:"column:username;unique"`
-	PasswordHash string    `gorm:"column:password_hash"`
-	UpdatedAt    time.Time `gorm:"column:updated_at"`
+	ID           uuid.UUID
+	UserID       uuid.UUID
+	Username     string
+	PasswordHash string
+	UpdatedAt    time.Time
 }
 
 func NewCredentials(userID uuid.UUID, Username, password string) (*Credentials, error) {
@@ -27,6 +27,18 @@ func NewCredentials(userID uuid.UUID, Username, password string) (*Credentials, 
 		return nil, err
 	}
 	return &v, nil
+}
+
+func (c *Credentials) FillWith(userID uuid.UUID, Username, password string) error {
+	c.ID = uuid.New()
+	c.UserID = userID
+	c.Username = Username
+
+	err := c.SetPassword(password)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *Credentials) SetPassword(password string) error {
