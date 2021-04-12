@@ -7,8 +7,8 @@ import (
 
 type UserCredentialValidator struct {
 	Credentials struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
+		Username string `json:"username" binding:"required,alphanum,min=4,max=255"`
+		Password string `json:"password" binding:"required,alphanum,min=8,max=255"`
 	} `json:"credentials"`
 
 	output CredentialOutput `json:"-"`

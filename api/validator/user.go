@@ -13,14 +13,14 @@ import (
 type UserRegistrationValidator struct {
 	User struct {
 		PublicInfo struct {
-			FirstName string `json:"firstname"`
-			LastName  string `json:"lastname"`
-			Phone     string `json:"phone"`
-			Email     string `json:"email"`
+			FirstName string `json:"firstname" binding:"required,alpha"`
+			LastName  string `json:"lastname" binding:"required,alpha"`
+			Phone     string `json:"phone" binding:"required,phone_fr"`
+			Email     string `json:"email" binding:"required,email"`
 		} `json:"public_info"`
 		Credentials struct {
-			Username string `json:"username"`
-			Password string `json:"password"`
+			Username string `json:"username" binding:"required,alphanum,min=4,max=255"`
+			Password string `json:"password" binding:"required,alphanum,min=8,max=255"`
 		} `json:"credentials"`
 	} `json:"user"`
 

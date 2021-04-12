@@ -5,13 +5,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 )
 
-func RegisterCustomValidations(e *gin.Engine) {
+func RegisterCustomValidations(e *gin.Engine) bool {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("phone_fr", phoneValidation)
+		return true
 	}
+	return false
 }
 
 var phoneValidation validator.Func = func(fl validator.FieldLevel) bool {

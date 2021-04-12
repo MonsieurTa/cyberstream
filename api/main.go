@@ -39,7 +39,9 @@ func main() {
 	}
 
 	router := gin.Default()
-	validator.RegisterCustomValidations(router)
+	if ok := validator.RegisterCustomValidations(router); !ok {
+		panic("could not register custom validations")
+	}
 
 	app, err := a.NewApp(db, router)
 	if err != nil {
