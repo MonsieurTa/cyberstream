@@ -17,7 +17,7 @@ func AccessTokenGeneration(service auth.UseCase) gin.HandlerFunc {
 
 		err := validator.Validate(c)
 		if err != nil {
-			c.JSON(http.StatusUnprocessableEntity, common.NewValidationError(err))
+			c.JSON(http.StatusUnprocessableEntity, common.NewError("validation", err))
 			return
 		}
 
