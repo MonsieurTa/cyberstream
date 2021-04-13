@@ -2,13 +2,17 @@ package torrent
 
 import (
 	"crypto/rand"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDebianTracker(t *testing.T) {
-	tfile, err := ParseFromFile("/home/wta/Projects/hypertube/debian.torrent")
+	wdPath, err := os.Getwd()
+	assert.Nil(t, err)
+
+	tfile, err := ParseFromFile(wdPath + `/debian.torrent`)
 	assert.Nil(t, err)
 
 	peerID := [20]byte{}
@@ -24,7 +28,10 @@ func TestDebianTracker(t *testing.T) {
 }
 
 func TestAnimeTracker(t *testing.T) {
-	tfile, err := ParseFromFile("/home/wta/Projects/hypertube/test.mkv.torrent")
+	wdPath, err := os.Getwd()
+	assert.Nil(t, err)
+
+	tfile, err := ParseFromFile(wdPath + `/test.mkv.torrent`)
 	assert.Nil(t, err)
 
 	peerID := [20]byte{}

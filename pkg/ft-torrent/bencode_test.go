@@ -8,9 +8,12 @@ import (
 )
 
 func TestNewBencodeTorrent(t *testing.T) {
-	r, _ := os.Open("/home/wta/Projects/hypertube/test.mkv.torrent")
+	wdPath, err := os.Getwd()
+	assert.Nil(t, err)
+
+	r, _ := os.Open(wdPath + `/test.mkv.torrent`)
 
 	defer r.Close()
-	_, err := Open(r)
+	_, err = Open(r)
 	assert.Nil(t, err)
 }

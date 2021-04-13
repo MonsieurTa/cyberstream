@@ -16,4 +16,6 @@ const (
 	PROVIDER_42_AUTH_URI     = "https://api.intra.42.fr/oauth/authorize"
 
 	JWT_SECRET = "lgRdGwgyixzBE6nVANMeSXPOut6ZTsdQ"
+
+	SUBSPLEASE_URL = "https://subsplease.org/api/"
 )
