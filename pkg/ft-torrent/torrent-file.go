@@ -37,7 +37,7 @@ func ParseFromFile(filepath string) (TorrentFile, error) {
 	return Parse(r)
 }
 
-func (t TorrentFile) Trackers() ([]Tracker, error) {
+func (t *TorrentFile) Trackers() ([]Tracker, error) {
 	output := make([]Tracker, len(t.AnnounceList))
 
 	for i, v := range t.AnnounceList {
@@ -55,7 +55,7 @@ func (t TorrentFile) Trackers() ([]Tracker, error) {
 	return output, nil
 }
 
-func (t TorrentFile) buildTracker(announce string, peerID [20]byte) (Tracker, error) {
+func (t *TorrentFile) buildTracker(announce string, peerID [20]byte) (Tracker, error) {
 	config := TrackerConfig{
 		Announce:   announce,
 		Port:       DEFAULT_TRACKER_PORT,

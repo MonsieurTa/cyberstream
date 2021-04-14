@@ -17,7 +17,7 @@ var (
 	err_invalid_pstrlen = errors.New("invalid pstr len")
 )
 
-func (h Handshake) Serialize() []byte {
+func (h *Handshake) Serialize() []byte {
 	offset := 0
 
 	totalBufSize := len(h.pstr) + 49

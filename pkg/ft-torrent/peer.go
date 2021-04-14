@@ -22,10 +22,10 @@ func (p *Peer) SetPort(port uint16) {
 	p.port = port
 }
 
-func (p Peer) String() string {
+func (p *Peer) String() string {
 	return p.ip.String() + ":" + strconv.Itoa(int(p.port))
 }
 
-func (p Peer) Port() uint16 {
+func (p *Peer) Port() uint16 {
 	return p.port
 }

@@ -52,7 +52,7 @@ func Open(r io.Reader) (bencodeTorrent, error) {
 	return unserialize(data)
 }
 
-func (b bencodeInfo) hash() ([20]byte, error) {
+func (b *bencodeInfo) hash() ([20]byte, error) {
 	dict := map[string]interface{}{
 		"pieces":       []byte(b.Pieces),
 		"piece length": b.PieceLength,
