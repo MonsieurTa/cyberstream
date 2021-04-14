@@ -12,18 +12,13 @@ import (
 )
 
 type Tracker struct {
-	PeerID     [20]byte
-	Port       uint16
-	Uploaded   string
-	Downloaded string
-	Compact    string
-	Left       string
+	peerID     [20]byte
+	port       uint16
+	uploaded   string
+	downloaded string
+	compact    string
+	left       string
 	baseURL    *url.URL
-}
-
-type TrackerResponse struct {
-	Interval int
-	Peers    string
 }
 
 var (
@@ -46,26 +41,26 @@ func NewTracker(config TrackerConfig) (Tracker, error) {
 		return Tracker{}, err
 	}
 	rv := Tracker{
-		Port:       config.Port,
-		Uploaded:   config.Uploaded,
-		Downloaded: config.Downloaded,
-		Compact:    config.Compact,
-		Left:       config.Left,
+		port:       config.Port,
+		uploaded:   config.Uploaded,
+		downloaded: config.Downloaded,
+		compact:    config.Compact,
+		left:       config.Left,
 		baseURL:    baseURL,
 	}
-	copy(rv.PeerID[:], config.PeerID[:])
+	copy(rv.peerID[:], config.PeerID[:])
 	return rv, nil
 }
 
 func (t *Tracker) url(infoHash [20]byte) (string, error) {
 	params := url.Values{
 		"info_hash":  []string{string(infoHash[:])},
-		"peer_id":    []string{string(t.PeerID[:])},
-		"port":       []string{strconv.Itoa(int(t.Port))},
-		"uploaded":   []string{t.Uploaded},
-		"downloaded": []string{t.Downloaded},
-		"compact":    []string{t.Compact},
-		"left":       []string{t.Left},
+		"peer_id":    []string{string(t.peerID[:])},
+		"port":       []string{strconv.Itoa(int(t.port))},
+		"uploaded":   []string{t.uploaded},
+		"downloaded": []string{t.downloaded},
+		"compact":    []string{t.compact},
+		"left":       []string{t.left},
 	}
 	t.baseURL.RawQuery = params.Encode()
 	return t.baseURL.String(), nil
