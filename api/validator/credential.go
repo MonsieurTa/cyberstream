@@ -5,25 +5,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type UserCredentialValidator struct {
+type UserCredentialsValidator struct {
 	Credentials struct {
 		Username string `json:"username" binding:"required,alphanum,min=4,max=255"`
 		Password string `json:"password" binding:"required,alphanum,min=8,max=255"`
 	} `json:"credentials"`
 
-	output CredentialOutput `json:"-"`
+	output CredentialsOutput `json:"-"`
 }
 
-type CredentialOutput struct {
+type CredentialsOutput struct {
 	Username string
 	Password string
 }
 
-func NewUserCredentialValidator() *UserCredentialValidator {
-	return &UserCredentialValidator{}
+func NewUserCredentialsValidator() *UserCredentialsValidator {
+	return &UserCredentialsValidator{}
 }
 
-func (v *UserCredentialValidator) Validate(c *gin.Context) error {
+func (v *UserCredentialsValidator) Validate(c *gin.Context) error {
 	err := common.Bind(c, v)
 	if err != nil {
 		return err
@@ -34,6 +34,6 @@ func (v *UserCredentialValidator) Validate(c *gin.Context) error {
 	return nil
 }
 
-func (v UserCredentialValidator) Value() CredentialOutput {
+func (v UserCredentialsValidator) Value() CredentialsOutput {
 	return v.output
 }

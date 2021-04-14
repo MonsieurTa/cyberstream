@@ -13,7 +13,7 @@ import (
 
 func AccessTokenGeneration(service auth.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		validator := validator.NewUserCredentialValidator()
+		validator := validator.NewUserCredentialsValidator()
 
 		err := validator.Validate(c)
 		if err != nil {
