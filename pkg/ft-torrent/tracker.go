@@ -96,22 +96,3 @@ func (t *Tracker) RequestPeers(infoHash [20]byte) (TrackerResponse, error) {
 	}
 	return NewTrackerResponse(data)
 }
-
-func NewTrackerResponse(data map[string]interface{}) (TrackerResponse, error) {
-	rv := TrackerResponse{}
-
-	rawInterval, ok1 := data["interval"]
-	interval, ok2 := rawInterval.(int64)
-	if !ok1 || !ok2 {
-		return TrackerResponse{}, err_malformed_response
-	}
-	rv.Interval = int(interval)
-
-	rawPeers, ok1 := data["peers"]
-	peers, ok2 := rawPeers.([]byte)
-	if !ok1 || !ok2 {
-		return TrackerResponse{}, err_malformed_response
-	}
-	rv.Peers = string(peers[:])
-	return rv, nil
-}
