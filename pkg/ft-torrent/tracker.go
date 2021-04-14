@@ -90,7 +90,7 @@ func (t *Tracker) RequestPeers(infoHash [20]byte) (TrackerResponse, error) {
 		return TrackerResponse{}, err
 	}
 
-	data, ok := rawData.(bencodedResponse)
+	data, ok := rawData.(map[string]interface{})
 	if !ok {
 		return TrackerResponse{}, err_malformed_response
 	}

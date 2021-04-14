@@ -6,8 +6,6 @@ import (
 	"net"
 )
 
-type bencodedResponse map[string]interface{}
-
 type TrackerResponse struct {
 	interval int
 	peers    []byte
@@ -17,7 +15,7 @@ var (
 	err_key = func(key string) error { return fmt.Errorf("key error: %v", key) }
 )
 
-func NewTrackerResponse(data bencodedResponse) (TrackerResponse, error) {
+func NewTrackerResponse(data map[string]interface{}) (TrackerResponse, error) {
 	rv := TrackerResponse{}
 
 	rawInterval, ok1 := data["interval"]
