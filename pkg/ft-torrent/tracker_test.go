@@ -22,8 +22,8 @@ func TestDebianTracker(t *testing.T) {
 	trackers, err := tfile.Trackers()
 	assert.Nil(t, err)
 
-	if len(trackers) != 0 {
-		t.Errorf("expected empty trackers, got %d len", len(trackers))
+	if len(trackers) != 1 {
+		t.Errorf("expected default tracker, got %d len", len(trackers))
 	}
 }
 
