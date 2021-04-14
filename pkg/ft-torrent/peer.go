@@ -1,6 +1,9 @@
 package torrent
 
-import "net"
+import (
+	"net"
+	"strconv"
+)
 
 type Peer struct {
 	ip   net.IP
@@ -19,8 +22,8 @@ func (p *Peer) SetPort(port uint16) {
 	p.port = port
 }
 
-func (p Peer) IP() net.IP {
-	return p.ip
+func (p Peer) String() string {
+	return p.ip.String() + ":" + strconv.Itoa(int(p.port))
 }
 
 func (p Peer) Port() uint16 {
