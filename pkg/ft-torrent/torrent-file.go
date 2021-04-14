@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -63,17 +64,22 @@ func (t *TorrentFile) Trackers() ([]Tracker, error) {
 		return []Tracker{tr}, nil
 	}
 
-	output := make([]Tracker, len(t.AnnounceList))
-	for i, v := range t.AnnounceList {
+	output := make([]Tracker, 0, len(t.AnnounceList))
+	for _, v := range t.AnnounceList {
+		if !strings.HasPrefix(v, "http://") {
+			continue
+		}
+
 		peerID, err := generatePeerID()
 		if err != nil {
 			return nil, err
 		}
 
-		output[i], err = t.buildTracker(v, peerID)
+		tr, err := t.buildTracker(v, peerID)
 		if err != nil {
 			return nil, err
 		}
+		output = append(output, tr)
 	}
 	return output, nil
 }
