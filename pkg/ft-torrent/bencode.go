@@ -173,12 +173,10 @@ func unserialize(data interface{}) (bencodeTorrent, error) {
 		return bencodeTorrent{}, err_missing_announce
 	}
 
-	announceList, ok := m["announce-list"]
-	if ok {
-		err := bto.fill(announce, announceList)
-		if err != nil {
-			return bencodeTorrent{}, err
-		}
+	announceList := m["announce-list"]
+	err := bto.fill(announce, announceList)
+	if err != nil {
+		return bencodeTorrent{}, err
 	}
 
 	info, ok := m["info"]
@@ -186,7 +184,7 @@ func unserialize(data interface{}) (bencodeTorrent, error) {
 		return bencodeTorrent{}, err_missing_info
 	}
 
-	err := bto.Info.fill(info)
+	err = bto.Info.fill(info)
 	if err != nil {
 		return bencodeTorrent{}, err
 	}
