@@ -41,7 +41,7 @@ func TestAnimeTracker(t *testing.T) {
 	trackers, err := tfile.Trackers()
 	assert.Nil(t, err)
 
-	if len(trackers) != 16 {
-		t.Errorf("expected trackers of len 16, got %d", len(trackers))
+	if len(trackers) != 2 {
+		t.Errorf("expected 2 http trackers, got %d", len(trackers))
 	}
 }
