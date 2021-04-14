@@ -37,12 +37,35 @@ func ParseFromFile(filepath string) (TorrentFile, error) {
 	return Parse(r)
 }
 
-func (t *TorrentFile) Trackers() ([]Tracker, error) {
-	output := make([]Tracker, len(t.AnnounceList))
+func generatePeerID() ([20]byte, error) {
+	peerID := [20]byte{}
+	_, err := rand.Read(peerID[:])
+	if err != nil {
+		return [20]byte{}, err
+	}
+	return peerID, nil
+}
 
+func (t *TorrentFile) defaultTracker() (Tracker, error) {
+	peerID, err := generatePeerID()
+	if err != nil {
+		return Tracker{}, err
+	}
+	return t.buildTracker(t.Announce, peerID)
+}
+
+func (t *TorrentFile) Trackers() ([]Tracker, error) {
+	if len(t.AnnounceList) == 0 {
+		tr, err := t.defaultTracker()
+		if err != nil {
+			return nil, err
+		}
+		return []Tracker{tr}, nil
+	}
+
+	output := make([]Tracker, len(t.AnnounceList))
 	for i, v := range t.AnnounceList {
-		peerID := [20]byte{}
-		_, err := rand.Read(peerID[:])
+		peerID, err := generatePeerID()
 		if err != nil {
 			return nil, err
 		}
