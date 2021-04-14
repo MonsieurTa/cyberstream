@@ -47,8 +47,8 @@ func (tr *TrackerResponse) Peers() ([]Peer, error) {
 	rv := make([]Peer, nbPeers)
 	for i := 0; i < nbPeers; i++ {
 		offset := i * peerSize
-		rv[i].IP = net.IP(tr.peers[offset : offset+4])
-		rv[i].Port = binary.BigEndian.Uint16(tr.peers[offset+4 : offset+6])
+		rv[i].SetIP(net.IP(tr.peers[offset : offset+4]))
+		rv[i].SetPort(binary.BigEndian.Uint16(tr.peers[offset+4 : offset+6]))
 	}
 	return rv, nil
 }
