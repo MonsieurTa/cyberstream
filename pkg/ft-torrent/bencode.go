@@ -23,6 +23,22 @@ type bencodeInfo struct {
 	Name        string
 }
 
+var (
+	err_invalid_info          = errors.New("invalid info")
+	err_invalid_pieces        = errors.New("invalid pieces")
+	err_invalid_piece_length  = errors.New("invalid piece length")
+	err_invalid_length        = errors.New("invalid length")
+	err_invalid_name          = errors.New("invalid name")
+	err_invalid_announce      = errors.New("invalid announce")
+	err_invalid_announce_list = errors.New("invalid announce-list")
+
+	err_invalid_data     = errors.New("invalid data")
+	err_missing_announce = errors.New("missing announce")
+	err_missing_info     = errors.New("missing info")
+
+	err_malformed_piece = func(len int) error { return fmt.Errorf("malformed pieces: len = %d", len) }
+)
+
 func Open(r io.Reader) (bencodeTorrent, error) {
 	buf, err := ioutil.ReadAll(r)
 	if err != nil {
@@ -56,8 +72,7 @@ func (b *bencodeInfo) splitPieceHashes() ([][20]byte, error) {
 	hashLen := 20
 	buf := []byte(b.Pieces)
 	if len(buf)%hashLen != 0 {
-		err := fmt.Errorf("malformed pieces: len = %d", len(buf))
-		return nil, err
+		return nil, err_malformed_piece(len(buf))
 	}
 
 	nbPieces := len(buf) / hashLen
@@ -92,7 +107,7 @@ func (b *bencodeTorrent) toTorrentFile() (TorrentFile, error) {
 func (bto *bencodeTorrent) fill(rawAnnounce interface{}, rawAnnounceList interface{}) error {
 	announce, ok := rawAnnounce.([]uint8)
 	if !ok {
-		return errors.New("invalid announce")
+		return err_invalid_announce
 	}
 	bto.Announce = string(announce)
 
@@ -102,7 +117,7 @@ func (bto *bencodeTorrent) fill(rawAnnounce interface{}, rawAnnounceList interfa
 		for i, v := range announceList {
 			s, ok := v.([]interface{})
 			if !ok {
-				return errors.New("invalid data in announce-list")
+				return err_invalid_announce_list
 			}
 			bto.AnnounceList[i] = string(s[0].([]uint8))
 		}
@@ -113,34 +128,34 @@ func (bto *bencodeTorrent) fill(rawAnnounce interface{}, rawAnnounceList interfa
 func (i *bencodeInfo) fill(rawInfo interface{}) error {
 	info, ok := rawInfo.(map[string]interface{})
 	if !ok {
-		return errors.New("invalid info")
+		return err_invalid_info
 	}
 
 	rawPieces, ok1 := info["pieces"]
 	pieces, ok2 := rawPieces.([]uint8)
 	if !ok1 || !ok2 {
-		return errors.New("invalid pieces")
+		return err_invalid_pieces
 	}
 	i.Pieces = string(pieces)
 
 	rawPieceLength, ok1 := info["piece length"]
 	pieceLength, ok2 := rawPieceLength.(int64)
 	if !ok1 || !ok2 {
-		return errors.New("invalid piece length")
+		return err_invalid_piece_length
 	}
 	i.PieceLength = int(pieceLength)
 
 	rawLength, ok1 := info["length"]
 	length, ok2 := rawLength.(int64)
 	if !ok1 || !ok2 {
-		return errors.New("invalid length")
+		return err_invalid_length
 	}
 	i.Length = int(length)
 
 	rawName, ok1 := info["name"]
 	name, ok2 := rawName.([]uint8)
 	if !ok1 || !ok2 {
-		return errors.New("invalid name")
+		return err_invalid_name
 	}
 	i.Name = string(name)
 	return nil
@@ -149,13 +164,13 @@ func (i *bencodeInfo) fill(rawInfo interface{}) error {
 func unserialize(data interface{}) (bencodeTorrent, error) {
 	m, ok := data.(map[string]interface{})
 	if !ok {
-		return bencodeTorrent{}, errors.New("invalid data")
+		return bencodeTorrent{}, err_invalid_data
 	}
 
 	bto := bencodeTorrent{}
 	announce, ok := m["announce"]
 	if !ok {
-		return bencodeTorrent{}, errors.New("missing announce")
+		return bencodeTorrent{}, err_missing_announce
 	}
 
 	announceList, ok := m["announce-list"]
@@ -168,7 +183,7 @@ func unserialize(data interface{}) (bencodeTorrent, error) {
 
 	info, ok := m["info"]
 	if !ok {
-		return bencodeTorrent{}, errors.New("missing info")
+		return bencodeTorrent{}, err_missing_info
 	}
 
 	err := bto.Info.fill(info)
