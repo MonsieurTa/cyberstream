@@ -30,6 +30,33 @@ var (
 	err_malformed_response = errors.New("malformed tracker response")
 )
 
+type TrackerConfig struct {
+	Announce   string
+	PeerID     [20]byte
+	Port       uint16
+	Uploaded   string
+	Downloaded string
+	Compact    string
+	Left       string
+}
+
+func NewTracker(config TrackerConfig) (Tracker, error) {
+	baseURL, err := url.Parse(config.Announce)
+	if err != nil {
+		return Tracker{}, err
+	}
+	rv := Tracker{
+		Port:       config.Port,
+		Uploaded:   config.Uploaded,
+		Downloaded: config.Downloaded,
+		Compact:    config.Compact,
+		Left:       config.Left,
+		baseURL:    baseURL,
+	}
+	copy(rv.PeerID[:], config.PeerID[:])
+	return rv, nil
+}
+
 func (t *Tracker) url(infoHash [20]byte) (string, error) {
 	params := url.Values{
 		"info_hash":  []string{string(infoHash[:])},

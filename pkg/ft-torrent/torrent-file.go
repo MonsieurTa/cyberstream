@@ -3,7 +3,6 @@ package torrent
 import (
 	"crypto/rand"
 	"io"
-	"net/url"
 	"os"
 	"strconv"
 )
@@ -57,18 +56,14 @@ func (t TorrentFile) Trackers() ([]Tracker, error) {
 }
 
 func (t TorrentFile) buildTracker(announce string, peerID [20]byte) (Tracker, error) {
-	baseURL, err := url.Parse(announce)
-	if err != nil {
-		return Tracker{}, err
-	}
-	rv := Tracker{
+	config := TrackerConfig{
+		Announce:   announce,
 		Port:       DEFAULT_TRACKER_PORT,
 		Uploaded:   "0",
 		Downloaded: "0",
 		Compact:    "1",
 		Left:       strconv.Itoa(t.Length),
-		baseURL:    baseURL,
 	}
-	copy(rv.PeerID[:], peerID[:])
-	return rv, nil
+	copy(config.PeerID[:], peerID[:])
+	return NewTracker(config)
 }
