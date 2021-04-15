@@ -9,6 +9,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTrackerResponse(t *testing.T) {
+	data := map[string]interface{}{
+		"interval": int64(900),
+		"peers":    []byte{},
+	}
+
+	_, err := NewTrackerResponse(data)
+	assert.Nil(t, err)
+}
+
 func TestPeersRequest(t *testing.T) {
 	wdPath, err := os.Getwd()
 	assert.Nil(t, err)
@@ -30,12 +40,7 @@ func TestPeersRequest(t *testing.T) {
 			fmt.Printf("could not request peers from %v\n", tr.announce)
 			continue
 		}
-
-		peers, err := trResp.Peers()
+		_, err = trResp.Peers()
 		assert.Nil(t, err)
-		for _, peer := range peers {
-			fmt.Printf("%s\n", peer.String())
-		}
-		fmt.Println()
 	}
 }
