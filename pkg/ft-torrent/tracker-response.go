@@ -2,36 +2,21 @@ package torrent
 
 import (
 	"encoding/binary"
-	"fmt"
 	"net"
 )
 
 type TrackerResponse struct {
-	interval int
-	peers    []byte
+	interval      int
+	peers         []byte
+	failureReason string
 }
 
-var (
-	err_key = func(key string) error { return fmt.Errorf("key error: %v", key) }
-)
-
-func NewTrackerResponse(data map[string]interface{}) (TrackerResponse, error) {
-	rv := TrackerResponse{}
-
-	rawInterval, ok1 := data["interval"]
-	interval, ok2 := rawInterval.(int64)
-	if !ok1 || !ok2 {
-		return TrackerResponse{}, err_key("interval")
+func NewTrackerResponse(m bencodeMap) TrackerResponse {
+	return TrackerResponse{
+		interval:      m.GetInt("interval"),
+		peers:         []byte(m.GetString("peers")),
+		failureReason: m.GetString("failure reason"),
 	}
-	rv.interval = int(interval)
-
-	rawPeers, ok1 := data["peers"]
-	peers, ok2 := rawPeers.([]byte)
-	if !ok1 || !ok2 {
-		return TrackerResponse{}, err_key("peers")
-	}
-	rv.peers = peers[:]
-	return rv, nil
 }
 
 func (tr *TrackerResponse) Peers() ([]Peer, error) {

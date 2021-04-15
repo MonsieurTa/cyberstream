@@ -14,6 +14,6 @@ func TestNewBencodeTorrent(t *testing.T) {
 	r, _ := os.Open(wdPath + `/test.mkv.torrent`)
 
 	defer r.Close()
-	_, err = Open(r)
+	_, err = ReadTorrentFile(r)
 	assert.Nil(t, err)
 }

@@ -2,13 +2,12 @@ package torrent
 
 import (
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
-	"github.com/IncSW/go-bencode"
+	"github.com/marksamman/bencode"
 )
 
 type Tracker struct {
@@ -82,19 +81,10 @@ func (t *Tracker) RequestPeers(infoHash [20]byte) (TrackerResponse, error) {
 	}
 
 	defer resp.Body.Close()
-	rawBody, err := ioutil.ReadAll(resp.Body)
+	data, err := bencode.Decode(resp.Body)
 	if err != nil {
 		return TrackerResponse{}, err
 	}
 
-	rawData, err := bencode.Unmarshal(rawBody)
-	if err != nil {
-		return TrackerResponse{}, err
-	}
-
-	data, ok := rawData.(map[string]interface{})
-	if !ok {
-		return TrackerResponse{}, err_malformed_response
-	}
-	return NewTrackerResponse(data)
+	return NewTrackerResponse(data), nil
 }

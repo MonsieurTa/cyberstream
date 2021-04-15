@@ -2,75 +2,125 @@ package torrent
 
 import (
 	"crypto/sha1"
-	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 
-	"github.com/IncSW/go-bencode"
+	"github.com/marksamman/bencode"
 )
 
 type bencodeTorrent struct {
-	Announce     string
-	AnnounceList []string
-	Info         bencodeInfo
+	announce     string
+	announceList []string
+	creationDate int
+	comment      string
+	createdBy    string
+	encoding     string
+	info         bencodeInfo
 }
 
 type bencodeInfo struct {
-	Pieces      string
-	PieceLength int
-	Length      int
-	Name        string
+	name      string
+	filesInfo []bencodeFileInfo
 }
 
+type bencodeFileInfo struct {
+	pieces      string
+	pieceLength int
+	length      int
+	path        string
+}
+
+type bencodeMap map[string]interface{}
+
 var (
-	err_invalid_info          = errors.New("invalid info")
-	err_invalid_pieces        = errors.New("invalid pieces")
-	err_invalid_piece_length  = errors.New("invalid piece length")
-	err_invalid_length        = errors.New("invalid length")
-	err_invalid_name          = errors.New("invalid name")
-	err_invalid_announce      = errors.New("invalid announce")
-	err_invalid_announce_list = errors.New("invalid announce-list")
-
-	err_invalid_data     = errors.New("invalid data")
-	err_missing_announce = errors.New("missing announce")
-	err_missing_info     = errors.New("missing info")
-
 	err_malformed_piece = func(len int) error { return fmt.Errorf("malformed pieces: len = %d", len) }
 )
 
-func Open(r io.Reader) (bencodeTorrent, error) {
-	buf, err := ioutil.ReadAll(r)
+func ReadTorrentFile(r io.Reader) (*bencodeTorrent, error) {
+	m, err := bencode.Decode(r)
 	if err != nil {
-		return bencodeTorrent{}, err
+		return nil, err
 	}
-
-	data, err := bencode.Unmarshal(buf)
-	if err != nil {
-		return bencodeTorrent{}, err
-	}
-	return unserialize(data)
+	return unserialize(bencodeMap(m))
 }
 
-func (b *bencodeInfo) hash() ([20]byte, error) {
-	dict := map[string]interface{}{
-		"pieces":       []byte(b.Pieces),
-		"piece length": b.PieceLength,
-		"length":       b.Length,
-		"name":         []byte(b.Name),
+func unserialize(m bencodeMap) (*bencodeTorrent, error) {
+	bto, err := newBencodeTorrent(m)
+	if err != nil {
+		return nil, err
 	}
 
-	buf, err := bencode.Marshal(dict)
-	if err != nil {
-		return [20]byte{}, err
-	}
-	h := sha1.Sum(buf)
-	return h, nil
+	info := m.GetDict("info")
+	bto.info = newBencodeInfo(info)
+	return bto, nil
 }
 
-func (b *bencodeInfo) splitPieceHashes() ([][20]byte, error) {
+func newBencodeTorrent(meta bencodeMap) (*bencodeTorrent, error) {
+	list := meta.GetList("announce-list")
+
+	announceList := make([]string, len(list))
+	for i, v := range list {
+		announceList[i] = v.([]interface{})[0].(string)
+	}
+
+	return &bencodeTorrent{
+		announce:     meta.GetString("announce"),
+		announceList: announceList,
+		creationDate: meta.GetInt("creation date"),
+		comment:      meta.GetString("comment"),
+		createdBy:    meta.GetString("created by"),
+		encoding:     meta.GetString("encoding"),
+	}, nil
+}
+
+func newBencodeInfo(info bencodeMap) bencodeInfo {
+	name := info.GetString("name")
+	files := info.GetList("files")
+	if files != nil {
+		fileList := make([]bencodeFileInfo, len(files))
+		for i, f := range files {
+			df := bencodeMap(f.(map[string]interface{}))
+
+			fileList[i].pieces = df.GetString("pieces")
+			fileList[i].pieceLength = df.GetInt("piece length")
+			fileList[i].length = df.GetInt("length")
+			fileList[i].path = df.GetString("path")
+		}
+		return bencodeInfo{name, fileList}
+	}
+
+	return bencodeInfo{
+		name,
+		[]bencodeFileInfo{{
+			info.GetString("pieces"),
+			info.GetInt("piece length"),
+			info.GetInt("length"),
+			"",
+		}},
+	}
+}
+
+func (b *bencodeInfo) hash() [20]byte {
+	if len(b.filesInfo) == 1 {
+		infoDict := map[string]interface{}{
+			"name":         b.name,
+			"pieces":       b.filesInfo[0].pieces,
+			"piece length": b.filesInfo[0].pieceLength,
+			"length":       b.filesInfo[0].length,
+		}
+		return sha1.Sum(bencode.Encode(infoDict))
+	}
+
+	infoDict := map[string]interface{}{
+		"name":  b.name,
+		"files": b.filesInfo,
+	}
+	return sha1.Sum(bencode.Encode(infoDict))
+}
+
+func (b *bencodeFileInfo) splitPieceHashes() ([][20]byte, error) {
 	hashLen := 20
-	buf := []byte(b.Pieces)
+	buf := []byte(b.pieces)
 	if len(buf)%hashLen != 0 {
 		return nil, err_malformed_piece(len(buf))
 	}
@@ -83,110 +133,73 @@ func (b *bencodeInfo) splitPieceHashes() ([][20]byte, error) {
 	return output, nil
 }
 
-func (b *bencodeTorrent) toTorrentFile() (TorrentFile, error) {
-	pieceHashes, err := b.Info.splitPieceHashes()
-	if err != nil {
-		return TorrentFile{}, err
-	}
-	infoHash, err := b.Info.hash()
-
-	if err != nil {
-		return TorrentFile{}, err
-	}
-	return TorrentFile{
-		Announce:     b.Announce,
-		AnnounceList: b.AnnounceList,
-		InfoHash:     infoHash,
-		Name:         b.Info.Name,
-		PieceHashes:  pieceHashes,
-		PieceLength:  b.Info.PieceLength,
-		Length:       b.Info.Length,
-	}, nil
-}
-
-func (bto *bencodeTorrent) fill(rawAnnounce interface{}, rawAnnounceList interface{}) error {
-	announce, ok := rawAnnounce.([]uint8)
-	if !ok {
-		return err_invalid_announce
-	}
-	bto.Announce = string(announce)
-
-	announceList, ok := rawAnnounceList.([]interface{})
-	if ok {
-		bto.AnnounceList = make([]string, len(announceList))
-		for i, v := range announceList {
-			s, ok := v.([]interface{})
-			if !ok {
-				return err_invalid_announce_list
-			}
-			bto.AnnounceList[i] = string(s[0].([]uint8))
+func (b *bencodeTorrent) toTorrentFile() ([]Torrent, error) {
+	rv := make([]Torrent, 0, len(b.info.filesInfo))
+	infoHash := b.info.hash()
+	for _, v := range b.info.filesInfo {
+		pieceHashes, err := v.splitPieceHashes()
+		if err != nil {
+			continue
 		}
+
+		t := Torrent{
+			Announce:     b.announce,
+			AnnounceList: b.announceList[:],
+			InfoHash:     infoHash,
+			Name:         b.info.name + v.path,
+			PieceHashes:  pieceHashes,
+			PieceLength:  v.pieceLength,
+			Length:       v.length,
+		}
+		rv = append(rv, t)
 	}
-	return nil
+	return rv, nil
 }
 
-func (i *bencodeInfo) fill(rawInfo interface{}) error {
-	info, ok := rawInfo.(map[string]interface{})
+func (m bencodeMap) GetString(key string) string {
+	v, ok := m[key]
 	if !ok {
-		return err_invalid_info
+		return ""
 	}
-
-	rawPieces, ok1 := info["pieces"]
-	pieces, ok2 := rawPieces.([]uint8)
-	if !ok1 || !ok2 {
-		return err_invalid_pieces
+	rv, ok := v.(string)
+	if !ok {
+		return ""
 	}
-	i.Pieces = string(pieces)
-
-	rawPieceLength, ok1 := info["piece length"]
-	pieceLength, ok2 := rawPieceLength.(int64)
-	if !ok1 || !ok2 {
-		return err_invalid_piece_length
-	}
-	i.PieceLength = int(pieceLength)
-
-	rawLength, ok1 := info["length"]
-	length, ok2 := rawLength.(int64)
-	if !ok1 || !ok2 {
-		return err_invalid_length
-	}
-	i.Length = int(length)
-
-	rawName, ok1 := info["name"]
-	name, ok2 := rawName.([]uint8)
-	if !ok1 || !ok2 {
-		return err_invalid_name
-	}
-	i.Name = string(name)
-	return nil
+	return rv
 }
 
-func unserialize(data interface{}) (bencodeTorrent, error) {
-	m, ok := data.(map[string]interface{})
+func (m bencodeMap) GetList(key string) []interface{} {
+	v, ok := m[key]
 	if !ok {
-		return bencodeTorrent{}, err_invalid_data
+		return nil
 	}
-
-	bto := bencodeTorrent{}
-	announce, ok := m["announce"]
+	rv, ok := v.([]interface{})
 	if !ok {
-		return bencodeTorrent{}, err_missing_announce
+		return nil
 	}
+	return rv
+}
 
-	announceList := m["announce-list"]
-	err := bto.fill(announce, announceList)
-	if err != nil {
-		return bencodeTorrent{}, err
-	}
-
-	info, ok := m["info"]
+func (m bencodeMap) GetInt(key string) int {
+	v, ok := m[key]
 	if !ok {
-		return bencodeTorrent{}, err_missing_info
+		return 0
 	}
+	rv, ok := v.(int64)
+	if !ok {
+		return 0
+	}
+	return int(rv)
+}
 
-	err = bto.Info.fill(info)
-	if err != nil {
-		return bencodeTorrent{}, err
+func (m bencodeMap) GetDict(key string) bencodeMap {
+	v, ok := m[key]
+	if !ok {
+		return nil
 	}
-	return bto, nil
+	rv, ok := v.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	return bencodeMap(rv)
 }

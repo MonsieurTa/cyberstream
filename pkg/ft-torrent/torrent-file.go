@@ -12,7 +12,7 @@ var (
 	DEFAULT_TRACKER_PORT uint16 = 6881
 )
 
-type TorrentFile struct {
+type Torrent struct {
 	Announce     string
 	AnnounceList []string
 	InfoHash     [20]byte
@@ -22,18 +22,18 @@ type TorrentFile struct {
 	Length       int
 }
 
-func Parse(r io.Reader) (TorrentFile, error) {
-	bto, err := Open(r)
+func Parse(r io.Reader) ([]Torrent, error) {
+	bto, err := ReadTorrentFile(r)
 	if err != nil {
-		return TorrentFile{}, err
+		return nil, err
 	}
 	return bto.toTorrentFile()
 }
 
-func ParseFromFile(filepath string) (TorrentFile, error) {
+func ParseFromFile(filepath string) ([]Torrent, error) {
 	r, err := os.Open(filepath)
 	if err != nil {
-		return TorrentFile{}, err
+		return nil, err
 	}
 	return Parse(r)
 }
@@ -47,7 +47,7 @@ func generatePeerID() ([20]byte, error) {
 	return peerID, nil
 }
 
-func (t *TorrentFile) defaultTracker() (Tracker, error) {
+func (t *Torrent) defaultTracker() (Tracker, error) {
 	peerID, err := generatePeerID()
 	if err != nil {
 		return Tracker{}, err
@@ -55,7 +55,7 @@ func (t *TorrentFile) defaultTracker() (Tracker, error) {
 	return t.buildTracker(t.Announce, peerID)
 }
 
-func (t *TorrentFile) Trackers() ([]Tracker, error) {
+func (t *Torrent) Trackers() ([]Tracker, error) {
 	if len(t.AnnounceList) == 0 {
 		tr, err := t.defaultTracker()
 		if err != nil {
@@ -66,6 +66,7 @@ func (t *TorrentFile) Trackers() ([]Tracker, error) {
 
 	output := make([]Tracker, 0, len(t.AnnounceList))
 	for _, v := range t.AnnounceList {
+		// TODO: wss, udp
 		if !strings.HasPrefix(v, "http://") {
 			continue
 		}
@@ -84,7 +85,7 @@ func (t *TorrentFile) Trackers() ([]Tracker, error) {
 	return output, nil
 }
 
-func (t *TorrentFile) buildTracker(announce string, peerID [20]byte) (Tracker, error) {
+func (t *Torrent) buildTracker(announce string, peerID [20]byte) (Tracker, error) {
 	config := TrackerConfig{
 		Announce:   announce,
 		Port:       DEFAULT_TRACKER_PORT,
