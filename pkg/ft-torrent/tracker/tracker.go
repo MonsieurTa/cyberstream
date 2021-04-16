@@ -1,14 +1,19 @@
-package torrent
+package tracker
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
+	b "github.com/MonsieurTa/hypertube/pkg/ft-torrent/bencode"
+	"github.com/MonsieurTa/hypertube/pkg/ft-torrent/peer"
 	"github.com/marksamman/bencode"
 )
+
+type Trackers []Tracker
 
 type Tracker struct {
 	announce   string
@@ -31,19 +36,21 @@ type TrackerConfig struct {
 }
 
 var (
+	DEFAULT_TRACKER_PORT uint16 = 6881
+
 	err_malformed_response = errors.New("malformed tracker response")
 	err_invalid_url        = errors.New("invalid url")
 )
 
-func NewTracker(config TrackerConfig) (Tracker, error) {
+func NewTracker(announce string, peerID [20]byte, left int) (Tracker, error) {
 	rv := Tracker{
-		announce:   config.Announce,
-		peerID:     config.PeerID,
-		port:       config.Port,
-		uploaded:   config.Uploaded,
-		downloaded: config.Downloaded,
-		compact:    config.Compact,
-		left:       config.Left,
+		announce:   announce,
+		peerID:     peerID,
+		port:       DEFAULT_TRACKER_PORT,
+		uploaded:   "0",
+		downloaded: "0",
+		compact:    "1",
+		left:       strconv.Itoa(left),
 	}
 	return rv, nil
 }
@@ -86,5 +93,27 @@ func (t *Tracker) RequestPeers(infoHash [20]byte) (TrackerResponse, error) {
 		return TrackerResponse{}, err
 	}
 
-	return NewTrackerResponse(data), nil
+	return NewTrackerResponse(b.Decoder(data)), nil
+}
+
+func (t *Tracker) Protocol() string {
+	return t.announce[0:3]
+}
+
+func (trs Trackers) RequestPeers(infoHash [20]byte) []peer.Peer {
+	rv := make([]peer.Peer, 0, len(trs)*50)
+	for _, tracker := range trs {
+		resp, err := tracker.RequestPeers(infoHash)
+
+		if err != nil || resp.Failed() {
+			continue
+		}
+		peers, err := resp.Peers()
+		if err != nil {
+			fmt.Println("invalid peers")
+			continue
+		}
+		rv = append(rv, peers...)
+	}
+	return rv
 }

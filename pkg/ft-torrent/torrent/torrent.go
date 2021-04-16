@@ -1,12 +1,25 @@
 package torrent
 
 import (
-	"crypto/sha1"
+	"crypto/rand"
 	"fmt"
 	"io"
+	"strings"
 
+	b "github.com/MonsieurTa/hypertube/pkg/ft-torrent/bencode"
+	"github.com/MonsieurTa/hypertube/pkg/ft-torrent/tracker"
 	"github.com/marksamman/bencode"
 )
+
+type Torrent struct {
+	Announce     string
+	AnnounceList []string
+	InfoHash     [20]byte
+	Name         string
+	PieceHashes  [][20]byte
+	PieceLength  int
+	Length       int
+}
 
 type bencodeTorrent struct {
 	announce     string
@@ -30,32 +43,30 @@ type bencodeFileInfo struct {
 	path        string
 }
 
-type bencodeMap map[string]interface{}
-
 var (
 	err_malformed_piece = func(len int) error { return fmt.Errorf("malformed pieces: len = %d", len) }
 )
 
-func ReadTorrentFile(r io.Reader) (*bencodeTorrent, error) {
+func Read(r io.Reader) (*bencodeTorrent, error) {
 	m, err := bencode.Decode(r)
 	if err != nil {
 		return nil, err
 	}
-	return unserialize(bencodeMap(m))
+	return unserialize(b.Decoder(m))
 }
 
-func unserialize(m bencodeMap) (*bencodeTorrent, error) {
+func unserialize(m Decoder) (*bencodeTorrent, error) {
 	bto, err := newBencodeTorrent(m)
 	if err != nil {
 		return nil, err
 	}
 
 	info := m.GetDict("info")
-	bto.info = newBencodeInfo(info)
+	bto.info = newBencodeInfo(b.Decoder(info))
 	return bto, nil
 }
 
-func newBencodeTorrent(meta bencodeMap) (*bencodeTorrent, error) {
+func newBencodeTorrent(meta Decoder) (*bencodeTorrent, error) {
 	list := meta.GetList("announce-list")
 
 	announceList := make([]string, len(list))
@@ -73,13 +84,13 @@ func newBencodeTorrent(meta bencodeMap) (*bencodeTorrent, error) {
 	}, nil
 }
 
-func newBencodeInfo(info bencodeMap) bencodeInfo {
-	name := info.GetString("name")
-	files := info.GetList("files")
+func newBencodeInfo(d Decoder) bencodeInfo {
+	name := d.GetString("name")
+	files := d.GetList("files")
 	if files != nil {
 		fileList := make([]bencodeFileInfo, len(files))
 		for i, f := range files {
-			df := bencodeMap(f.(map[string]interface{}))
+			df := b.Decoder(f.(map[string]interface{}))
 
 			fileList[i].pieces = df.GetString("pieces")
 			fileList[i].pieceLength = df.GetInt("piece length")
@@ -92,30 +103,16 @@ func newBencodeInfo(info bencodeMap) bencodeInfo {
 	return bencodeInfo{
 		name,
 		[]bencodeFileInfo{{
-			info.GetString("pieces"),
-			info.GetInt("piece length"),
-			info.GetInt("length"),
+			d.GetString("pieces"),
+			d.GetInt("piece length"),
+			d.GetInt("length"),
 			"",
 		}},
 	}
 }
 
 func (b *bencodeInfo) hash() [20]byte {
-	if len(b.filesInfo) == 1 {
-		infoDict := map[string]interface{}{
-			"name":         b.name,
-			"pieces":       b.filesInfo[0].pieces,
-			"piece length": b.filesInfo[0].pieceLength,
-			"length":       b.filesInfo[0].length,
-		}
-		return sha1.Sum(bencode.Encode(infoDict))
-	}
-
-	infoDict := map[string]interface{}{
-		"name":  b.name,
-		"files": b.filesInfo,
-	}
-	return sha1.Sum(bencode.Encode(infoDict))
+	return hash(b)
 }
 
 func (b *bencodeFileInfo) splitPieceHashes() ([][20]byte, error) {
@@ -133,7 +130,7 @@ func (b *bencodeFileInfo) splitPieceHashes() ([][20]byte, error) {
 	return output, nil
 }
 
-func (b *bencodeTorrent) toTorrentFile() ([]Torrent, error) {
+func (b *bencodeTorrent) toTorrent() ([]Torrent, error) {
 	rv := make([]Torrent, 0, len(b.info.filesInfo))
 	infoHash := b.info.hash()
 	for _, v := range b.info.filesInfo {
@@ -156,50 +153,53 @@ func (b *bencodeTorrent) toTorrentFile() ([]Torrent, error) {
 	return rv, nil
 }
 
-func (m bencodeMap) GetString(key string) string {
-	v, ok := m[key]
-	if !ok {
-		return ""
+func (t *Torrent) Trackers() (tracker.Trackers, error) {
+	if len(t.AnnounceList) == 0 {
+		tr, err := t.defaultTracker()
+		if err != nil {
+			return nil, err
+		}
+		return tracker.Trackers{tr}, nil
 	}
-	rv, ok := v.(string)
-	if !ok {
-		return ""
+
+	output := make([]tracker.Tracker, 0, len(t.AnnounceList))
+	for _, v := range t.AnnounceList {
+		// TODO: wss, udp
+		if !strings.HasPrefix(v, "http://") {
+			continue
+		}
+
+		peerID, err := generatePeerID()
+		if err != nil {
+			return nil, err
+		}
+
+		tr, err := t.buildTracker(v, peerID)
+		if err != nil {
+			return nil, err
+		}
+		output = append(output, tr)
 	}
-	return rv
+	return output, nil
 }
 
-func (m bencodeMap) GetList(key string) []interface{} {
-	v, ok := m[key]
-	if !ok {
-		return nil
-	}
-	rv, ok := v.([]interface{})
-	if !ok {
-		return nil
-	}
-	return rv
+func (t *Torrent) buildTracker(announce string, peerID [20]byte) (tracker.Tracker, error) {
+	return tracker.NewTracker(announce, peerID, t.Length)
 }
 
-func (m bencodeMap) GetInt(key string) int {
-	v, ok := m[key]
-	if !ok {
-		return 0
+func (t *Torrent) defaultTracker() (tracker.Tracker, error) {
+	peerID, err := generatePeerID()
+	if err != nil {
+		return tracker.Tracker{}, err
 	}
-	rv, ok := v.(int64)
-	if !ok {
-		return 0
-	}
-	return int(rv)
+	return t.buildTracker(t.Announce, peerID)
 }
 
-func (m bencodeMap) GetDict(key string) bencodeMap {
-	v, ok := m[key]
-	if !ok {
-		return nil
+func generatePeerID() ([20]byte, error) {
+	peerID := [20]byte{}
+	_, err := rand.Read(peerID[:])
+	if err != nil {
+		return [20]byte{}, err
 	}
-	rv, ok := v.(map[string]interface{})
-	if !ok {
-		return nil
-	}
-	return bencodeMap(rv)
+	return peerID, nil
 }

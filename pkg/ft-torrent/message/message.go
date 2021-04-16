@@ -1,4 +1,4 @@
-package torrent
+package message
 
 import (
 	"encoding/binary"
@@ -30,6 +30,10 @@ func (m *Message) ID() messageID {
 	return m.id
 }
 
+func (m *Message) Payload() []byte {
+	return m.payload[:]
+}
+
 func (m *Message) Serialize() []byte {
 	len := uint32(len(m.payload) + 1)
 
@@ -42,7 +46,7 @@ func (m *Message) Serialize() []byte {
 	return buf
 }
 
-func ReadMessage(r io.Reader) (*Message, error) {
+func Read(r io.Reader) (*Message, error) {
 	lengthBuf := make([]byte, 4)
 	_, err := io.ReadFull(r, lengthBuf)
 	if err != nil {
@@ -79,4 +83,34 @@ func (bf Bitfield) SetPiece(index int) {
 	byteIndex := index / 8
 	offset := index % 8
 	bf[byteIndex] |= 1 << (7 - offset)
+}
+
+func Choke() *Message {
+	return &Message{id: CHOKE}
+}
+
+func Unchoke() *Message {
+	return &Message{id: UNCHOKE}
+}
+
+func Interested() *Message {
+	return &Message{id: INTERESTED}
+}
+
+func NotInterested() *Message {
+	return &Message{id: NOT_INTERESTED}
+}
+
+func Request(index, start, length int) *Message {
+	payload := make([]byte, 12)
+	binary.BigEndian.PutUint32(payload[0:4], uint32(index))
+	binary.BigEndian.PutUint32(payload[4:8], uint32(start))
+	binary.BigEndian.PutUint32(payload[8:12], uint32(length))
+	return &Message{id: REQUEST}
+}
+
+func Have(index int) *Message {
+	payload := make([]byte, 4)
+	binary.BigEndian.PutUint32(payload, uint32(index))
+	return &Message{id: HAVE}
 }

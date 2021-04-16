@@ -1,4 +1,4 @@
-package torrent
+package peer
 
 import (
 	"net"
@@ -23,7 +23,11 @@ func (p *Peer) SetPort(port uint16) {
 }
 
 func (p *Peer) String() string {
-	return p.ip.String() + ":" + strconv.Itoa(int(p.port))
+	return p.IP() + ":" + strconv.Itoa(int(p.port))
+}
+
+func (p *Peer) IP() string {
+	return p.ip.String()
 }
 
 func (p *Peer) Port() uint16 {
