@@ -2,6 +2,7 @@ package message
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 )
 
@@ -26,12 +27,24 @@ type Message struct {
 	payload []byte
 }
 
+var (
+	err_wrong_size = func(expected, got int) error { return fmt.Errorf("expected size: %d, got %d", expected, got) }
+
+	err_wrong_msg         = func(expected, got messageID) error { return fmt.Errorf("expected ID: %d, got %d", expected, got) }
+	err_payload_too_short = func(len int) error { return fmt.Errorf("payload too short. %d < 8", len) }
+	err_wrong_index       = func(expected, got int) error { return fmt.Errorf("expected index %d, got %d", expected, got) }
+	err_wrong_offset      = func(offset, limit int) error { return fmt.Errorf("offset too high. %d >= %d", offset, limit) }
+	err_wrong_datalen     = func(datalen, offset, limit int) error {
+		return fmt.Errorf("data too long [%d] for offset %d with length %d", datalen, offset, limit)
+	}
+)
+
 func (m *Message) ID() messageID {
 	return m.id
 }
 
 func (m *Message) Payload() []byte {
-	return m.payload[:]
+	return m.payload
 }
 
 func (m *Message) Serialize() []byte {
@@ -46,8 +59,9 @@ func (m *Message) Serialize() []byte {
 	return buf
 }
 
-func Read(r io.Reader) (*Message, error) {
+func ReadMessage(r io.Reader) (*Message, error) {
 	lengthBuf := make([]byte, 4)
+
 	_, err := io.ReadFull(r, lengthBuf)
 	if err != nil {
 		return nil, err
@@ -69,7 +83,6 @@ func Read(r io.Reader) (*Message, error) {
 		id:      messageID(messageBuf[0]),
 		payload: messageBuf[1:],
 	}
-
 	return &m, nil
 }
 
@@ -106,11 +119,57 @@ func Request(index, start, length int) *Message {
 	binary.BigEndian.PutUint32(payload[0:4], uint32(index))
 	binary.BigEndian.PutUint32(payload[4:8], uint32(start))
 	binary.BigEndian.PutUint32(payload[8:12], uint32(length))
-	return &Message{id: REQUEST}
+	return &Message{
+		id:      REQUEST,
+		payload: payload,
+	}
 }
 
 func Have(index int) *Message {
 	payload := make([]byte, 4)
 	binary.BigEndian.PutUint32(payload, uint32(index))
-	return &Message{id: HAVE}
+	return &Message{
+		id:      HAVE,
+		payload: payload,
+	}
+}
+
+func ParseHave(msg *Message) (int, error) {
+	const size = 4
+
+	if len(msg.payload) != size {
+		return 0, err_wrong_size(size, len(msg.payload))
+	}
+
+	rv := int(binary.BigEndian.Uint32(msg.payload))
+	return rv, nil
+}
+
+func ParsePiece(index int, buf []byte, msg *Message) (int, error) {
+	if msg.ID() != PIECE {
+		return 0, err_wrong_msg(PIECE, msg.ID())
+	}
+
+	payload := msg.Payload()
+	if len(payload) < 8 {
+		return 0, err_payload_too_short(len(payload))
+	}
+
+	parsedIndex := int(binary.BigEndian.Uint32(payload[0:4]))
+	if parsedIndex != index {
+		return 0, err_wrong_index(index, parsedIndex)
+	}
+
+	offset := int(binary.BigEndian.Uint32(payload[4:8]))
+	if offset >= len(buf) {
+		return 0, err_wrong_offset(offset, len(buf))
+	}
+
+	data := payload[8:]
+	if offset+len(data) > len(buf) {
+		return 0, err_wrong_datalen(offset+len(data), offset, len(buf))
+	}
+	copy(buf[offset:], data)
+
+	return len(data), nil
 }

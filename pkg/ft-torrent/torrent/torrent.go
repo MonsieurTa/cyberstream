@@ -1,24 +1,25 @@
 package torrent
 
 import (
-	"crypto/rand"
 	"fmt"
 	"io"
 	"strings"
 
 	b "github.com/MonsieurTa/hypertube/pkg/ft-torrent/bencode"
+	"github.com/MonsieurTa/hypertube/pkg/ft-torrent/common"
+	"github.com/MonsieurTa/hypertube/pkg/ft-torrent/download"
 	"github.com/MonsieurTa/hypertube/pkg/ft-torrent/tracker"
 	"github.com/marksamman/bencode"
 )
 
 type Torrent struct {
-	Announce     string
-	AnnounceList []string
-	InfoHash     [20]byte
-	Name         string
-	PieceHashes  [][20]byte
-	PieceLength  int
-	Length       int
+	announce     string
+	announceList []string
+	infoHash     [20]byte
+	name         string
+	pieceHashes  [][20]byte
+	pieceLength  int
+	length       int
 }
 
 type bencodeTorrent struct {
@@ -140,38 +141,33 @@ func (b *bencodeTorrent) toTorrent() ([]Torrent, error) {
 		}
 
 		t := Torrent{
-			Announce:     b.announce,
-			AnnounceList: b.announceList[:],
-			InfoHash:     infoHash,
-			Name:         b.info.name + v.path,
-			PieceHashes:  pieceHashes,
-			PieceLength:  v.pieceLength,
-			Length:       v.length,
+			announce:     b.announce,
+			announceList: b.announceList[:],
+			infoHash:     infoHash,
+			name:         b.info.name + v.path,
+			pieceHashes:  pieceHashes,
+			pieceLength:  v.pieceLength,
+			length:       v.length,
 		}
 		rv = append(rv, t)
 	}
 	return rv, nil
 }
 
-func (t *Torrent) Trackers() (tracker.Trackers, error) {
-	if len(t.AnnounceList) == 0 {
-		tr, err := t.defaultTracker()
+func (t *Torrent) Trackers(peerID [20]byte) (tracker.Trackers, error) {
+	if len(t.announceList) == 0 {
+		tr, err := t.defaultTracker(peerID)
 		if err != nil {
 			return nil, err
 		}
 		return tracker.Trackers{tr}, nil
 	}
 
-	output := make([]tracker.Tracker, 0, len(t.AnnounceList))
-	for _, v := range t.AnnounceList {
+	output := make([]tracker.Tracker, 0, len(t.announceList))
+	for _, v := range t.announceList {
 		// TODO: wss, udp
 		if !strings.HasPrefix(v, "http://") {
 			continue
-		}
-
-		peerID, err := generatePeerID()
-		if err != nil {
-			return nil, err
 		}
 
 		tr, err := t.buildTracker(v, peerID)
@@ -184,22 +180,56 @@ func (t *Torrent) Trackers() (tracker.Trackers, error) {
 }
 
 func (t *Torrent) buildTracker(announce string, peerID [20]byte) (tracker.Tracker, error) {
-	return tracker.NewTracker(announce, peerID, t.Length)
+	return tracker.NewTracker(announce, peerID, t.length)
 }
 
-func (t *Torrent) defaultTracker() (tracker.Tracker, error) {
-	peerID, err := generatePeerID()
-	if err != nil {
-		return tracker.Tracker{}, err
-	}
-	return t.buildTracker(t.Announce, peerID)
+func (t *Torrent) defaultTracker(peerID [20]byte) (tracker.Tracker, error) {
+	return t.buildTracker(t.announce, peerID)
 }
 
-func generatePeerID() ([20]byte, error) {
-	peerID := [20]byte{}
-	_, err := rand.Read(peerID[:])
+func (t *Torrent) Download() error {
+	d, err := download.NewDownloader(t)
 	if err != nil {
-		return [20]byte{}, err
+		return err
 	}
-	return peerID, nil
+	return d.Download()
+}
+
+func (t *Torrent) InfoHash() [20]byte {
+	return t.infoHash
+}
+
+func (t *Torrent) PieceBounds(index int) (int, int) {
+	start := index * t.pieceLength
+	end := start + t.pieceLength
+	if end > t.length {
+		end = t.length
+	}
+	return start, end
+}
+
+func (t *Torrent) PieceSize(index int) int {
+	start, end := t.PieceBounds(index)
+	return end - start
+}
+
+func (t *Torrent) Peers(peerID [20]byte) ([]common.Peer, error) {
+	trackers, err := t.Trackers(peerID)
+	if err != nil {
+		return nil, err
+	}
+	return trackers.RequestPeers(t.infoHash), nil
+}
+
+// Number of pieces
+func (t *Torrent) Pieces() int {
+	return len(t.pieceHashes)
+}
+
+func (t *Torrent) PieceHashes() [][20]byte {
+	return t.pieceHashes
+}
+
+func (t *Torrent) Length() int {
+	return t.length
 }

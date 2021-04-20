@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"net"
 
-	"github.com/MonsieurTa/hypertube/pkg/ft-torrent/peer"
+	"github.com/MonsieurTa/hypertube/pkg/ft-torrent/common"
 )
 
 type TrackerResponse struct {
@@ -27,7 +27,7 @@ func NewTrackerResponse(m Decoder) TrackerResponse {
 	}
 }
 
-func (tr *TrackerResponse) Peers() ([]peer.Peer, error) {
+func (tr *TrackerResponse) Peers() ([]common.Peer, error) {
 	const peerSize = 6
 
 	if len(tr.peers)%peerSize != 0 {
@@ -35,7 +35,7 @@ func (tr *TrackerResponse) Peers() ([]peer.Peer, error) {
 	}
 
 	nbPeers := len(tr.peers) / peerSize
-	rv := make([]peer.Peer, nbPeers)
+	rv := make([]common.Peer, nbPeers)
 	for i := 0; i < nbPeers; i++ {
 		offset := i * peerSize
 		rv[i].SetIP(net.IP(tr.peers[offset : offset+4]))

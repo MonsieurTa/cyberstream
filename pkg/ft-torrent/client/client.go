@@ -2,26 +2,30 @@ package client
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"log"
 	"net"
 	"time"
 
-	"github.com/MonsieurTa/hypertube/pkg/ft-torrent/handshake"
+	"github.com/MonsieurTa/hypertube/pkg/ft-torrent/common"
 	"github.com/MonsieurTa/hypertube/pkg/ft-torrent/message"
-	"github.com/MonsieurTa/hypertube/pkg/ft-torrent/peer"
 )
 
 type Client struct {
 	conn     net.Conn
 	bitfield message.Bitfield
-	state    State
+
+	peerID [20]byte
+	peer   common.Peer
+	State  State
 }
 
 type State struct {
-	amChoking      bool
-	amInterested   bool
-	peerChocking   bool
-	peerInterested bool
+	AmChoking      bool
+	AmInterested   bool
+	PeerChocking   bool
+	PeerInterested bool
 }
 
 var (
@@ -30,61 +34,86 @@ var (
 	err_expect_infohash = func(expect, got []byte) error { return fmt.Errorf("expected info hash %x but got %x", expect, got) }
 )
 
-func NewClient(peer peer.Peer, peerID, infoHash [20]byte) (*Client, error) {
-	conn, err := net.DialTimeout("tcp", peer.String(), 5*time.Second)
+func NewClient(peer common.Peer, peerID [20]byte) *Client {
+	return &Client{
+		conn:     nil,
+		bitfield: nil,
+		peerID:   peerID,
+		peer:     peer,
+		State:    defaultState(),
+	}
+}
+
+func (c *Client) Bitfield() message.Bitfield {
+	return c.bitfield
+}
+
+func (c *Client) Conn() net.Conn {
+	return c.conn
+}
+
+func (c *Client) Close() {
+	c.conn.Close()
+}
+
+func (c *Client) Ask(infoHash [20]byte) error {
+	conn, err := net.DialTimeout("tcp", c.peer.String(), 5*time.Second)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	_, err = shakeHand(conn, infoHash, peerID)
+	err = shakeHand(conn, c.peerID, infoHash)
 	if err != nil {
 		conn.Close()
-		return nil, err
+		return err
 	}
 
 	bf, err := recvBitfield(conn)
 	if err != nil {
-		return nil, err
+		conn.Close()
+		return err
 	}
-	return &Client{
-		conn:     conn,
-		bitfield: bf,
-		state:    defaultState(),
-	}, nil
+	c.bitfield = bf
+	c.conn = conn
+
+	log.Printf("connection established with %s\n", c.peer.String())
+	return nil
 }
 
 func defaultState() State {
 	return State{
-		amChoking:      true,
-		amInterested:   false,
-		peerChocking:   true,
-		peerInterested: false,
+		AmChoking:      true,
+		AmInterested:   false,
+		PeerChocking:   true,
+		PeerInterested: false,
 	}
 }
 
-func shakeHand(conn net.Conn, peerID, infoHash [20]byte) (*handshake.Handshake, error) {
-	hs := handshake.NewHandShake(infoHash, peerID)
+func shakeHand(Conn net.Conn, peerID, infoHash [20]byte) error {
+	hs := NewHandShake(infoHash, peerID)
 
-	_, err := conn.Write(hs.Serialize())
+	_, err := Conn.Write(hs.Serialize())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	resp, err := handshake.Read(conn)
+	resp, err := ReadHandshake(Conn)
+
 	if err != nil {
-		return nil, err
+		return errors.New("could not read peer handshake")
 	}
+
 	if !bytes.Equal(resp.InfoHash(), infoHash[:]) {
-		return nil, err_expect_infohash(infoHash[:], resp.InfoHash())
+		return err_expect_infohash(infoHash[:], resp.InfoHash())
 	}
-	return &resp, nil
+	return nil
 }
 
 func recvBitfield(conn net.Conn) (message.Bitfield, error) {
 	conn.SetDeadline(time.Now().Add(5 * time.Second))
 	defer conn.SetDeadline(time.Now())
 
-	msg, err := message.Read(conn)
+	msg, err := message.ReadMessage(conn)
 	if err != nil {
 		return nil, err
 	}
@@ -100,8 +129,7 @@ func recvBitfield(conn net.Conn) (message.Bitfield, error) {
 }
 
 func (c *Client) Read() (*message.Message, error) {
-	msg, err := message.Read(c.conn)
-	return msg, err
+	return message.ReadMessage(c.conn)
 }
 
 func (c *Client) SendRequest(index, start, length int) error {

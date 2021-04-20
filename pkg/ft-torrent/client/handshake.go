@@ -1,4 +1,4 @@
-package handshake
+package client
 
 import (
 	"errors"
@@ -25,22 +25,22 @@ func NewHandShake(infoHash, peerID [20]byte) Handshake {
 	}
 }
 
-func Read(r io.Reader) (Handshake, error) {
+func ReadHandshake(r io.Reader) (*Handshake, error) {
 	buf := make([]byte, 1)
 	_, err := io.ReadFull(r, buf)
 	if err != nil {
-		return Handshake{}, err
+		return nil, err
 	}
 
 	pstrLen := int(buf[0])
 	if pstrLen == 0 {
-		return Handshake{}, err_invalid_pstrlen
+		return nil, err_invalid_pstrlen
 	}
 
 	hsBuf := make([]byte, pstrLen+48)
 	_, err = io.ReadFull(r, hsBuf)
 	if err != nil {
-		return Handshake{}, nil
+		return nil, err
 	}
 
 	var infoHash, peerID [20]byte
@@ -54,7 +54,7 @@ func Read(r io.Reader) (Handshake, error) {
 		infoHash: infoHash,
 		peerID:   peerID,
 	}
-	return rv, nil
+	return &rv, nil
 }
 
 func (h *Handshake) Serialize() []byte {

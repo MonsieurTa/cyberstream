@@ -9,7 +9,7 @@ import (
 	"time"
 
 	b "github.com/MonsieurTa/hypertube/pkg/ft-torrent/bencode"
-	"github.com/MonsieurTa/hypertube/pkg/ft-torrent/peer"
+	"github.com/MonsieurTa/hypertube/pkg/ft-torrent/common"
 	"github.com/marksamman/bencode"
 )
 
@@ -23,16 +23,6 @@ type Tracker struct {
 	downloaded string
 	compact    string
 	left       string
-}
-
-type TrackerConfig struct {
-	Announce   string
-	PeerID     [20]byte
-	Port       uint16
-	Uploaded   string
-	Downloaded string
-	Compact    string
-	Left       string
 }
 
 var (
@@ -100,8 +90,8 @@ func (t *Tracker) Protocol() string {
 	return t.announce[0:3]
 }
 
-func (trs Trackers) RequestPeers(infoHash [20]byte) []peer.Peer {
-	rv := make([]peer.Peer, 0, len(trs)*50)
+func (trs Trackers) RequestPeers(infoHash [20]byte) []common.Peer {
+	rv := make([]common.Peer, 0, len(trs)*50)
 	for _, tracker := range trs {
 		resp, err := tracker.RequestPeers(infoHash)
 
