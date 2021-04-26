@@ -14,7 +14,7 @@ import (
 
 type Client struct {
 	conn     net.Conn
-	bitfield message.Bitfield
+	bitfield common.Bitfield
 
 	peerID [20]byte
 	peer   common.Peer
@@ -44,7 +44,7 @@ func NewClient(peer common.Peer, peerID [20]byte) *Client {
 	}
 }
 
-func (c *Client) Bitfield() message.Bitfield {
+func (c *Client) Bitfield() common.Bitfield {
 	return c.bitfield
 }
 
@@ -109,7 +109,7 @@ func shakeHand(Conn net.Conn, peerID, infoHash [20]byte) error {
 	return nil
 }
 
-func recvBitfield(conn net.Conn) (message.Bitfield, error) {
+func recvBitfield(conn net.Conn) (common.Bitfield, error) {
 	conn.SetDeadline(time.Now().Add(5 * time.Second))
 	defer conn.SetDeadline(time.Now())
 

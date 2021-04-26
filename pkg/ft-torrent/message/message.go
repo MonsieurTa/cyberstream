@@ -20,8 +20,6 @@ const (
 
 type messageID uint8
 
-type Bitfield []byte
-
 type Message struct {
 	id      messageID
 	payload []byte
@@ -84,18 +82,6 @@ func ReadMessage(r io.Reader) (*Message, error) {
 		payload: messageBuf[1:],
 	}
 	return &m, nil
-}
-
-func (b Bitfield) HasPiece(index int) bool {
-	byteIndex := index / 8
-	offset := index % 8
-	return b[byteIndex]>>(7-offset)&1 != 0
-}
-
-func (bf Bitfield) SetPiece(index int) {
-	byteIndex := index / 8
-	offset := index % 8
-	bf[byteIndex] |= 1 << (7 - offset)
 }
 
 func Choke() *Message {
