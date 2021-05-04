@@ -7,6 +7,7 @@ import (
 	"github.com/MonsieurTa/hypertube/api/validator"
 	"github.com/MonsieurTa/hypertube/config"
 	"github.com/MonsieurTa/hypertube/infrastructure/model"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -33,12 +34,15 @@ func main() {
 	if err != nil {
 		panic("failed to connect to database")
 	}
+
 	err = Migrate(db)
 	if err != nil {
 		panic("failed to migrate models")
 	}
 
 	router := gin.Default()
+	router.Use(cors.Default())
+
 	if ok := validator.RegisterCustomValidations(router); !ok {
 		panic("could not register custom validations")
 	}
