@@ -5,6 +5,7 @@ import (
 	"github.com/MonsieurTa/hypertube/api/middleware"
 	"github.com/MonsieurTa/hypertube/config"
 	"github.com/MonsieurTa/hypertube/infrastructure/repository"
+	"github.com/MonsieurTa/hypertube/internal/inmem"
 	auth "github.com/MonsieurTa/hypertube/usecase/authentication"
 	"github.com/MonsieurTa/hypertube/usecase/fortytwo"
 	"github.com/MonsieurTa/hypertube/usecase/state"
@@ -31,7 +32,7 @@ type Services struct {
 
 func NewApp(db *gorm.DB, router *gin.Engine) (*App, error) {
 	userRepo := repository.NewUserGORM(db)
-	stateInMem := repository.NewStateInMem()
+	stateInMem := inmem.NewStateInMem()
 
 	ftService, err := fortytwo.NewService()
 	if err != nil {

@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/MonsieurTa/hypertube/api/common"
-	"github.com/MonsieurTa/hypertube/infrastructure/repository"
+	"github.com/MonsieurTa/hypertube/internal/inmem"
 	"github.com/MonsieurTa/hypertube/usecase/fortytwo"
 	"github.com/MonsieurTa/hypertube/usecase/state"
 	"github.com/gin-gonic/gin"
@@ -40,7 +40,7 @@ func RedirectCallback(ftService fortytwo.UseCase, stateService state.UseCase) gi
 
 func GetAuthorizeURI(ftService fortytwo.UseCase, stateService state.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		state, err := repository.GenerateState()
+		state, err := inmem.GenerateState()
 		if err != nil {
 			cerr := common.NewError("auth", err)
 			c.JSON(http.StatusInternalServerError, cerr)
