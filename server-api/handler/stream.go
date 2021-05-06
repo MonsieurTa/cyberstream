@@ -4,21 +4,21 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/MonsieurTa/hypertube/common/entity"
-	"github.com/MonsieurTa/hypertube/config"
 	"github.com/gin-gonic/gin"
 )
 
 const (
-	endpoint = `http://` + config.STATIC_FILES_HOST + `:` + config.STATIC_FILES_PORT + `/stream`
-
 	ERR_HTTP_POST  = "error_http_post"
 	ERR_RESP_BODY  = "error_resp_body"
 	ERR_UNMARSHALL = "error_unmarshall"
 )
 
 func RequestStream(c *gin.Context) {
+	endpoint := `http://` + os.Getenv("STATIC_FILES_HOST") + `:` + os.Getenv("STATIC_FILES_PORT") + `/stream`
+
 	resp, err := http.Post(endpoint, "application/json", c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

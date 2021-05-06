@@ -1,8 +1,9 @@
 package app
 
 import (
+	"os"
+
 	"github.com/MonsieurTa/hypertube/common/infrastructure/repository"
-	"github.com/MonsieurTa/hypertube/config"
 	"github.com/MonsieurTa/hypertube/server-api/handler"
 	"github.com/MonsieurTa/hypertube/server-api/internal/inmem"
 	"github.com/MonsieurTa/hypertube/server-api/middleware"
@@ -63,6 +64,7 @@ func NewApp(db *gorm.DB, router *gin.Engine) (*App, error) {
 }
 
 func (a *App) MakeHandlers() {
+	secret := os.Getenv("JWT_SECRET")
 	v1 := a.router.Group("/api")
 
 	v1.POST("/stream", handler.RequestStream)
@@ -73,9 +75,9 @@ func (a *App) MakeHandlers() {
 	auth.GET("/fortytwo/authorize_uri", handler.GetAuthorizeURI(a.services.fortytwo, a.services.state))
 
 	users := v1.Group("/users")
-	users.GET("/", middleware.Auth(config.JWT_SECRET))    // TODO
-	users.GET("/:id", middleware.Auth(config.JWT_SECRET)) // TODO
-	users.PATCH("/:id", middleware.Auth(config.JWT_SECRET), handler.UsersUpdate(a.services.user))
+	users.GET("/", middleware.Auth(secret))    // TODO
+	users.GET("/:id", middleware.Auth(secret)) // TODO
+	users.PATCH("/:id", middleware.Auth(secret), handler.UsersUpdate(a.services.user))
 	users.POST("/", handler.UsersRegistration(a.services.user))
 
 	movies := v1.Group("/movies") // TODO
@@ -84,5 +86,6 @@ func (a *App) MakeHandlers() {
 }
 
 func (a *App) Run() error {
-	return a.router.Run(config.PORT)
+	port := ":" + os.Getenv("API_PORT")
+	return a.router.Run(port)
 }

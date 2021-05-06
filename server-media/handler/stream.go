@@ -3,7 +3,6 @@ package handler
 import (
 	"crypto/sha1"
 	"encoding/hex"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/MonsieurTa/hypertube/common/entity"
 	"github.com/MonsieurTa/hypertube/common/validator"
-	"github.com/MonsieurTa/hypertube/config"
 	"github.com/MonsieurTa/hypertube/internal/hls"
 	"github.com/anacrolix/torrent"
 	"github.com/gin-gonic/gin"
@@ -21,6 +19,12 @@ const (
 	ERR_MAGNET         = "error_magnet"
 	ERR_TORRENT_CLIENT = "error_torrent_client"
 	ERR_VALIDATION     = "error_validation"
+)
+
+var (
+	STATIC_FILES_HOST string
+	STATIC_FILES_PORT string
+	STATIC_FILES_PATH string
 )
 
 // TODO create Stream service
@@ -59,17 +63,15 @@ func Stream(c *gin.Context) {
 	<-t.GotInfo()
 
 	h := sha1.Sum([]byte(t.Info().Name))
-	path := hex.EncodeToString(h[:]) + `.m3u8`
+	path := STATIC_FILES_PATH + "/" + hex.EncodeToString(h[:]) + `.m3u8`
 
 	ready := toHLS(t, path)
 	defer close(ready)
 
-	fmt.Println("====== NOT READY YET ======")
 	<-ready
-	fmt.Println("====== READY SENDING RESPONSE ======")
 
 	resp := entity.StreamResponse{
-		Url: "localhost:3001" + config.STATIC_FILES_PATH + "/" + path,
+		Url: STATIC_FILES_HOST + ":" + STATIC_FILES_PORT + path,
 	}
 	c.JSON(http.StatusOK, &resp)
 }

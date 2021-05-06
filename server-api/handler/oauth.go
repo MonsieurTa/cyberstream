@@ -2,10 +2,10 @@ package handler
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/MonsieurTa/hypertube/common/validator"
-	"github.com/MonsieurTa/hypertube/config"
 	"github.com/MonsieurTa/hypertube/server-api/common"
 	auth "github.com/MonsieurTa/hypertube/server-api/usecase/authentication"
 	"github.com/gin-gonic/gin"
@@ -31,7 +31,8 @@ func AccessTokenGeneration(service auth.UseCase) gin.HandlerFunc {
 
 		expiresAt := time.Now().Add(5 * time.Minute)
 		token := service.GenerateAccessToken(userID, expiresAt)
-		tokenString, err := token.SignedString([]byte(config.JWT_SECRET))
+		secret := os.Getenv("JWT_SECRET")
+		tokenString, err := token.SignedString([]byte(secret))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, common.NewError("auth", err))
 		}

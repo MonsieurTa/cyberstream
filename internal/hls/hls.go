@@ -3,8 +3,6 @@ package hls
 import (
 	"io"
 	"os/exec"
-
-	"github.com/MonsieurTa/hypertube/config"
 )
 
 func Init(filepath string) (r *io.PipeReader, w *io.PipeWriter, wait func() error) {
@@ -17,7 +15,7 @@ func Init(filepath string) (r *io.PipeReader, w *io.PipeWriter, wait func() erro
 		"-f", "hls",
 		"-hls_time", "15",
 		"-hls_playlist_type", "event",
-		config.STATIC_FILES_PATH+"/"+filepath,
+		filepath,
 	)
 	cmd.Stdin = r
 

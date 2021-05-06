@@ -8,8 +8,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 
-	"github.com/MonsieurTa/hypertube/config"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -37,10 +37,10 @@ func NewService() (*Service, error) {
 func (s *Service) GetAccessToken(code, state string) (*Token, error) {
 	form := url.Values{
 		"grant_type":    {"authorization_code"},
-		"client_id":     {config.AUTH_42_CLIENT_ID},
-		"client_secret": {config.AUTH_42_SECRET},
+		"client_id":     {os.Getenv("AUTH_42_CLIENT_ID")},
+		"client_secret": {os.Getenv("AUTH_42_SECRET")},
 		"code":          {code},
-		"redirect_uri":  {config.AUTH_42_REDIRECT_URI},
+		"redirect_uri":  {os.Getenv("AUTH_42_REDIRECT_URI")},
 		"state":         {state},
 	}
 
@@ -71,11 +71,11 @@ func (s *Service) GetAuthorizeURI(state string) (string, error) {
 	params := "client_id=%s&redirect_uri=%s&state=%s&response_type=code"
 	params = fmt.Sprintf(
 		params,
-		config.AUTH_42_CLIENT_ID,
-		config.AUTH_42_REDIRECT_URI,
+		os.Getenv("AUTH_42_CLIENT_ID"),
+		os.Getenv("AUTH_42_REDIRECT_URI"),
 		state,
 	)
-	rv := config.AUTH_42_AUTH_URI + "?" + params
+	rv := os.Getenv("AUTH_42_AUTH_URI") + "?" + params
 	return rv, nil
 }
 
@@ -83,8 +83,8 @@ func createAuthClient() (*http.Client, error) {
 	ctx := context.Background()
 
 	conf := clientcredentials.Config{
-		ClientID:     config.AUTH_42_CLIENT_ID,
-		ClientSecret: config.AUTH_42_SECRET,
+		ClientID:     os.Getenv("AUTH_42_CLIENT_ID"),
+		ClientSecret: os.Getenv("AUTH_42_SECRET"),
 		TokenURL:     "https://api.intra.42.fr/oauth/token",
 	}
 	token, err := conf.Token(ctx)
