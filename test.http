@@ -1,0 +1,8 @@
+POST http://localhost:3000/api/stream
+content-type: application/json
+
+{
+    "stream_request": {
+        "magnet": "magnet:?xt=urn:btih:BEVZUOHIIYM542G4BUWZYAVIDLWDMHR5&dn=[SubsPlease] Full Dive - 05 (540p) [D6C12340].mkv&xl=291980516&tr=http://nyaa.tracker.wf:7777/announce&tr=udp://tracker.coppersurfer.tk:6969/announce&tr=udp://tracker.opentrackr.org:1337/announce&tr=udp://9.rarbg.to:2710/announce&tr=udp://9.rarbg.me:2710/announce&tr=udp://tracker.leechers-paradise.org:6969/announce&tr=udp://tracker.internetwarriors.net:1337/announce&tr=udp://tracker.cyberia.is:6969/announce&tr=udp://exodus.desync.com:6969/announce&tr=udp://tracker3.itzmx.com:6961/announce&tr=udp://tracker.torrent.eu.org:451/announce&tr=udp://tracker.tiny-vps.com:6969/announce&tr=udp://retracker.lanta-net.ru:2710/announce&tr=http://open.acgnxtracker.com:80/announce&tr=wss://tracker.openwebtorrent.com"
+    }
+}

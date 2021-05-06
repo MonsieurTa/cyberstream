@@ -5,21 +5,22 @@ services:
             - 5432:5432
         volumes:
             - hypertube-data:/var/lib/psql
-            # - ./scripts/pg-init-scripts:/docker-entrypoint-initdb.d
         environment:
             POSTGRES_USER: docker
             POSTGRES_PASSWORD: secret
             POSTGRES_DB: hypertube
-            # POSTGRES_MULTIPLE_DATABASES: hypertube, keycloak
-    web-server:
+    api:
+        image: hypertube-api
         restart: always
-        build: ./
         ports:
             - 3000:3000
-        volumes:
-            - ./:/app
         depends_on:
             - psql
+    media:
+        image: hypertube-media
+        restart: always
+        ports:
+            - 3001:8080
 
 volumes:
     hypertube-data:
