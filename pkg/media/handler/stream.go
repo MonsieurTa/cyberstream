@@ -10,7 +10,7 @@ import (
 
 	"github.com/MonsieurTa/hypertube/common/entity"
 	"github.com/MonsieurTa/hypertube/common/validator"
-	"github.com/MonsieurTa/hypertube/internal/hls"
+	"github.com/MonsieurTa/hypertube/pkg/media/internal/hls"
 	"github.com/anacrolix/torrent"
 	"github.com/gin-gonic/gin"
 )
