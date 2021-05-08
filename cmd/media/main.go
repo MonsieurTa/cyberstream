@@ -20,9 +20,9 @@ func main() {
 	initEnv()
 
 	router := gin.Default()
-	router.Static("/static", os.Getenv("STATIC_FILES_PATH"))
+	router.Static("/", os.Getenv("STATIC_FILES_PATH"))
 
 	router.POST("/stream", handler.Stream)
 
-	router.Run(":" + os.Getenv("STATIC_FILES_PORT"))
+	router.Run(":" + os.Getenv("MEDIA_PORT"))
 }

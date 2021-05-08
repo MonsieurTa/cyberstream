@@ -42,7 +42,7 @@ func Stream(c *gin.Context) {
 	magnet := v.Value().Magnet
 
 	cfg := torrent.NewDefaultClientConfig()
-	cfg.DataDir = "/download"
+	cfg.DataDir = os.Getenv("DOWNLOAD_FILES_PATH")
 	tc, err := torrent.NewClient(cfg)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -63,7 +63,7 @@ func Stream(c *gin.Context) {
 	<-t.GotInfo()
 
 	h := sha1.Sum([]byte(t.Info().Name))
-	path := STATIC_FILES_PATH + "/" + hex.EncodeToString(h[:]) + `.m3u8`
+	hlsPath := os.Getenv("STATIC_FILES_PATH") + "/" + filepath
 
 	ready := toHLS(t, path)
 	defer close(ready)
@@ -71,7 +71,7 @@ func Stream(c *gin.Context) {
 	<-ready
 
 	resp := entity.StreamResponse{
-		Url: STATIC_FILES_HOST + ":" + STATIC_FILES_PORT + path,
+		Url: "http://localhost" + ":" + os.Getenv("MEDIA_PORT") + "/" + filepath,
 	}
 	c.JSON(http.StatusOK, &resp)
 }

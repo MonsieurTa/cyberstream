@@ -17,7 +17,7 @@ const (
 )
 
 func RequestStream(c *gin.Context) {
-	endpoint := `http://` + os.Getenv("STATIC_FILES_HOST") + `:` + os.Getenv("STATIC_FILES_PORT") + `/stream`
+	endpoint := `http://` + os.Getenv("MEDIA_HOST") + `:` + os.Getenv("MEDIA_PORT") + `/stream`
 
 	resp, err := http.Post(endpoint, "application/json", c.Request.Body)
 	if err != nil {
