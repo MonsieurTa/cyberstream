@@ -1,0 +1,5 @@
+.env*
+
+hypertube*
+
+*.http
