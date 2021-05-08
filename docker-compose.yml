@@ -2,7 +2,7 @@ services:
     psql:
         image: postgres
         ports:
-            - 5432:5432
+            - 5431:5432
         volumes:
             - hypertube-data:/var/lib/psql
         environment:
@@ -14,13 +14,17 @@ services:
         restart: always
         ports:
             - 3000:3000
+        environment:
+            HYPERTUBE_ENV: production
         depends_on:
             - psql
     media:
         image: hypertube-media
         restart: always
         ports:
-            - 3001:8080
+            - 8080:8080
+        environment:
+            HYPERTUBE_ENV: production
 
 volumes:
     hypertube-data:
