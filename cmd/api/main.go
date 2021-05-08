@@ -6,7 +6,7 @@ import (
 
 	"github.com/MonsieurTa/hypertube/common/infrastructure/database"
 	"github.com/MonsieurTa/hypertube/common/validator"
-	a "github.com/MonsieurTa/hypertube/server-api/app"
+	a "github.com/MonsieurTa/hypertube/pkg/api/app"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"

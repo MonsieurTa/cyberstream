@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/MonsieurTa/hypertube/server-media/handler"
+	"github.com/MonsieurTa/hypertube/pkg/media/handler"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )

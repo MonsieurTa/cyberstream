@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/MonsieurTa/hypertube/common/entity"
-	"github.com/MonsieurTa/hypertube/server-api/common"
+	"github.com/MonsieurTa/hypertube/pkg/api/common"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

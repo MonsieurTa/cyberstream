@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/MonsieurTa/hypertube/common/validator"
-	"github.com/MonsieurTa/hypertube/server-api/common"
-	auth "github.com/MonsieurTa/hypertube/server-api/usecase/authentication"
+	"github.com/MonsieurTa/hypertube/pkg/api/common"
+	auth "github.com/MonsieurTa/hypertube/pkg/api/usecase/authentication"
 	"github.com/gin-gonic/gin"
 )
 

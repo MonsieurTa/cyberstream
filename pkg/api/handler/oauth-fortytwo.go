@@ -4,10 +4,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/MonsieurTa/hypertube/server-api/common"
-	"github.com/MonsieurTa/hypertube/server-api/internal/inmem"
-	"github.com/MonsieurTa/hypertube/server-api/usecase/fortytwo"
-	"github.com/MonsieurTa/hypertube/server-api/usecase/state"
+	"github.com/MonsieurTa/hypertube/pkg/api/common"
+	"github.com/MonsieurTa/hypertube/pkg/api/internal/inmem"
+	"github.com/MonsieurTa/hypertube/pkg/api/usecase/fortytwo"
+	"github.com/MonsieurTa/hypertube/pkg/api/usecase/state"
 	"github.com/gin-gonic/gin"
 )
 

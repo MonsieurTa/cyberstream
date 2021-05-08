@@ -1,7 +1,7 @@
 package validator
 
 import (
-	"github.com/MonsieurTa/hypertube/server-api/common"
+	"github.com/MonsieurTa/hypertube/pkg/api/common"
 	"github.com/gin-gonic/gin"
 )
 
