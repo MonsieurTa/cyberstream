@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/MonsieurTa/hypertube/pkg/media/handler"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -20,6 +21,8 @@ func main() {
 	initEnv()
 
 	router := gin.Default()
+	router.Use(cors.Default())
+
 	router.Static("/", os.Getenv("STATIC_FILES_PATH"))
 
 	router.POST("/stream", handler.Stream)
