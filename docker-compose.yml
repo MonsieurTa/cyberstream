@@ -2,7 +2,7 @@ services:
     psql:
         image: postgres
         ports:
-            - 5431:5432
+            - 5432:5432
         volumes:
             - hypertube-data:/var/lib/psql
         environment:
