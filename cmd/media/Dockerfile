@@ -2,7 +2,7 @@
 
 FROM golang:1.16.2-buster
 
-WORKDIR /api
+WORKDIR /media
 
 RUN apt-get -y update && apt-get -y upgrade && apt-get install -y ffmpeg
 
@@ -13,9 +13,10 @@ RUN go mod download
 ADD . .
 
 RUN mkdir /static
+RUN mkdir /download
 
-RUN go build -o hypertube-media cmd/media/main.go
+RUN make media
 
 EXPOSE 8080
 
-CMD ["./hypertube-media"]
+CMD ["./media"]
