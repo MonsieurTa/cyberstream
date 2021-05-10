@@ -1,6 +1,6 @@
 .env*
 
-hypertube*
+bin/*
 
 *.http
 
