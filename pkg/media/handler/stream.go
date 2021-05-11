@@ -23,61 +23,53 @@ const (
 )
 
 // TODO create Stream service
-func Stream(c *gin.Context) {
-	v := validator.NewStreamRequestValidator()
+func Stream(tc *torrent.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		v := validator.NewStreamRequestValidator()
 
-	err := v.Validate(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			ERR_VALIDATION: err.Error(),
-		})
-		return
+		err := v.Validate(c)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				ERR_VALIDATION: err.Error(),
+			})
+			return
+		}
+
+		magnet := v.Value().Magnet
+
+		t, err := tc.AddMagnet(magnet)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				ERR_MAGNET: err.Error(),
+			})
+			tc.Close()
+			return
+		}
+
+		<-t.GotInfo()
+
+		h := sha1.Sum([]byte(t.Info().Name))
+		dir := hex.EncodeToString(h[:])
+		filepath := dir + "/" + "out.m3u8"
+		hlsPath := os.Getenv("STATIC_FILES_PATH") + "/" + filepath
+
+		os.Mkdir(os.Getenv("STATIC_FILES_PATH")+"/"+dir, os.ModePerm)
+
+		ready, done := toHLS(t, hlsPath)
+		go func() {
+			<-done
+			close(ready)
+			close(done)
+			tc.Close()
+		}()
+
+		<-ready
+
+		resp := entity.StreamResponse{
+			Url: "http://localhost" + ":" + os.Getenv("MEDIA_PORT") + "/" + filepath,
+		}
+		c.JSON(http.StatusOK, &resp)
 	}
-
-	magnet := v.Value().Magnet
-
-	cfg := torrent.NewDefaultClientConfig()
-	cfg.DataDir = os.Getenv("DOWNLOAD_FILES_PATH")
-	tc, err := torrent.NewClient(cfg)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			ERR_TORRENT_CLIENT: err.Error(),
-		})
-		return
-	}
-
-	t, err := tc.AddMagnet(magnet)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			ERR_MAGNET: err.Error(),
-		})
-		tc.Close()
-		return
-	}
-
-	<-t.GotInfo()
-
-	h := sha1.Sum([]byte(t.Info().Name))
-	dir := hex.EncodeToString(h[:])
-	filepath := dir + "/" + "out.m3u8"
-	hlsPath := os.Getenv("STATIC_FILES_PATH") + "/" + filepath
-
-	os.Mkdir(os.Getenv("STATIC_FILES_PATH")+"/"+dir, os.ModePerm)
-
-	ready, done := toHLS(t, hlsPath)
-	go func() {
-		<-done
-		close(ready)
-		close(done)
-		tc.Close()
-	}()
-
-	<-ready
-
-	resp := entity.StreamResponse{
-		Url: "http://localhost" + ":" + os.Getenv("MEDIA_PORT") + "/" + filepath,
-	}
-	c.JSON(http.StatusOK, &resp)
 }
 
 func toHLS(t *torrent.Torrent, path string) (chan bool, chan bool) {
