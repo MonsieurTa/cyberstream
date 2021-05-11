@@ -4,8 +4,18 @@ BIN_DIR = bin
 
 all: $(BIN_API) $(BIN_MEDIA)
 
+run: all
+	docker-compose up -d psql
+	pm2 start bin/api bin/media
+
+stop:
+	pm2 stop api media
+
+flush:
+	pm2 flush
+
 $(BIN_DIR):
-	mkdir -p bin
+	mkdir -p $(BIN_DIR)
 
 $(BIN_API): | $(BIN_DIR)
 	go build -o $(BIN_API) cmd/api/main.go
