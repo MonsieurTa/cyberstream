@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/MonsieurTa/hypertube/pkg/media/handler"
+	"github.com/MonsieurTa/hypertube/pkg/media/usecase/media"
 	"github.com/anacrolix/torrent"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -32,13 +33,16 @@ func main() {
 	initEnv()
 
 	tc := newTorrentClient()
+	defer tc.Close()
 
 	router := gin.Default()
 	router.Use(cors.Default())
 
 	router.Static("/", os.Getenv("STATIC_FILES_PATH"))
 
-	router.POST("/stream", handler.Stream(tc))
+	mediaService := media.NewService(tc)
+
+	router.POST("/stream", handler.Stream(mediaService))
 
 	router.Run(":" + os.Getenv("MEDIA_PORT"))
 }

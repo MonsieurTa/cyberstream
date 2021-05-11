@@ -1,7 +1,9 @@
 package media
 
 type Reader interface{}
-type Writer interface{}
+type Writer interface {
+	AddMagnet()
+}
 
 type Repository interface {
 	Reader
@@ -9,4 +11,5 @@ type Repository interface {
 }
 
 type UseCase interface {
+	StreamMagnet(magnet string) (string, <-chan bool, error)
 }
