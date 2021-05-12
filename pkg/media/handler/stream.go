@@ -31,13 +31,11 @@ func Stream(service media.UseCase) gin.HandlerFunc {
 
 		magnet := v.Value().Magnet
 
-		filepath, ready, err := service.StreamMagnet(magnet)
+		filepath, err := service.StreamMagnet(magnet)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{ERR_MAGNET: err.Error()})
 			return
 		}
-
-		<-ready
 
 		resp := entity.StreamResponse{
 			Url: "http://localhost" + ":" + os.Getenv("MEDIA_PORT") + "/" + filepath,

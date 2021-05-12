@@ -3,11 +3,8 @@ package media
 import (
 	"crypto/sha1"
 	"encoding/hex"
-	"fmt"
-	"io"
 	"log"
 	"os"
-	"time"
 
 	"github.com/MonsieurTa/hypertube/pkg/media/internal/hls"
 	"github.com/anacrolix/torrent"
@@ -23,83 +20,47 @@ func NewService(tc *torrent.Client) *Service {
 	}
 }
 
-func (s *Service) StreamMagnet(magnet string) (string, <-chan bool, error) {
+func (s *Service) StreamMagnet(magnet string) (string, error) {
 	tc := s.tc
 
 	t, err := tc.AddMagnet(magnet)
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
 	<-t.GotInfo()
 
-	h := sha1.Sum([]byte(t.Info().Name))
-	dir := hex.EncodeToString(h[:])
-	filepath := dir + "/" + "out.m3u8"
-	hlsPath := os.Getenv("STATIC_FILES_PATH") + "/" + filepath
-	fmt.Println(hlsPath)
+	dirName, filepath, hlspath := stringify(t.Info().Name)
 
-	os.Mkdir(os.Getenv("STATIC_FILES_PATH")+"/"+dir, os.ModePerm)
+	createHLSFolder(dirName)
 
-	ready, done := toHLS(t, hlsPath)
+	c := hls.NewHLSConverter(hlspath, t)
+	err = c.Convert()
+	if err != nil {
+		return "", err
+	}
+
+	c.WaitUntilReady()
+
 	go func() {
-		<-done
-		close(ready)
-		close(done)
+		c.WaitUntilDone()
+		err := c.Close()
+		if err != nil {
+			log.Print(err)
+		}
 	}()
 
-	return filepath, ready, nil
+	return filepath, nil
 }
 
-func toHLS(t *torrent.Torrent, path string) (chan bool, chan bool) {
-	rpipe, wpipe, wait := hls.Init(path)
-	ready := make(chan bool)
-	done := make(chan bool)
+func stringify(name string) (dirName, filepath, hlspath string) {
+	h := sha1.Sum([]byte(name))
+	dirName = hex.EncodeToString(h[:])
+	filepath = dirName + "/" + "out.m3u8"
+	hlspath = os.Getenv("STATIC_FILES_PATH") + "/" + filepath
+	return
+}
 
-	progress := make(chan int64)
-	go func() {
-		r := t.NewReader()
-		buf := make([]byte, t.Info().PieceLength)
-		at := int64(0)
-		end := t.Length()
-
-		r.SetReadahead(end / 100 * 5)
-		for at < end {
-			n, err := r.Read(buf)
-			if err != nil && err != io.EOF {
-				log.Fatal(err)
-			}
-			_, err = wpipe.Write(buf)
-			if err != nil {
-				log.Fatal(err)
-			}
-			at += int64(n)
-			select {
-			case progress <- at:
-			default:
-			}
-		}
-		done <- true
-		log.Println(path, ": done")
-
-		r.Close()
-		rpipe.Close()
-		wpipe.Close()
-		close(progress)
-		wait()
-	}()
-
-	// send true to ready when 1% downloaded
-	go func() {
-		threshold := t.Length() / 100
-		for at := range progress {
-			if at >= threshold {
-				break
-			}
-			time.Sleep(time.Microsecond * 100)
-		}
-		ready <- true
-		log.Println(path, ": ready")
-	}()
-	return ready, done
+func createHLSFolder(dirName string) {
+	os.Mkdir(os.Getenv("STATIC_FILES_PATH")+"/"+dirName, os.ModePerm)
 }

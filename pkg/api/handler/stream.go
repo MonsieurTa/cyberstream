@@ -16,16 +16,17 @@ const (
 	ERR_UNMARSHALL = "error_unmarshall"
 )
 
-func RequestStream(c *gin.Context) {
-	endpoint := `http://` + os.Getenv("MEDIA_HOST") + `:` + os.Getenv("MEDIA_PORT") + `/stream`
+var MEDIA_ENDPOINT = `http://` + os.Getenv("MEDIA_HOST") + `:` + os.Getenv("MEDIA_PORT") + `/stream`
 
-	resp, err := http.Post(endpoint, "application/json", c.Request.Body)
+func RequestStream(c *gin.Context) {
+	resp, err := http.Post(MEDIA_ENDPOINT, "application/json", c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			ERR_HTTP_POST: err.Error(),
 		})
 		return
 	}
+
 	b, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {

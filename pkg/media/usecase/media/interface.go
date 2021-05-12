@@ -11,5 +11,5 @@ type Repository interface {
 }
 
 type UseCase interface {
-	StreamMagnet(magnet string) (string, <-chan bool, error)
+	StreamMagnet(magnet string) (string, error)
 }
