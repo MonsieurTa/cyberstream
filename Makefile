@@ -4,12 +4,14 @@ BIN_DIR = bin
 
 all: $(BIN_API) $(BIN_MEDIA)
 
-run: all
+start: all
 	docker-compose up -d psql
 	pm2 start bin/api bin/media
 
 stop:
 	pm2 stop api media
+
+restart: stop start
 
 flush:
 	pm2 flush
