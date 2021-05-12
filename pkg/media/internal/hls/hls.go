@@ -102,6 +102,7 @@ func (c *hlsConverter) convert() {
 
 	r.SetReadahead(end / 100 * 5)
 	for at < end {
+		// reading from the torrent.Reader will download the resource asked
 		n, err := r.Read(buf)
 		if err != nil && err != io.EOF {
 			log.Fatal(err)
