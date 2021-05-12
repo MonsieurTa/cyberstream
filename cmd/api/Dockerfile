@@ -14,4 +14,4 @@ RUN make api
 
 EXPOSE 3000
 
-CMD ["./api"]
+CMD ["./bin/api"]

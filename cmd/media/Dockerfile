@@ -19,4 +19,4 @@ RUN make media
 
 EXPOSE 8080
 
-CMD ["./media"]
+CMD ["./bin/media"]

@@ -21,8 +21,8 @@ services:
     media:
         image: hypertube-media
         restart: always
-        ports:
-            - 8080:8080
+        expose: # expose port to internal services only
+            - 8080
         environment:
             HYPERTUBE_ENV: production
 
