@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"log"
+	"math"
 	"os"
 
 	"github.com/MonsieurTa/hypertube/pkg/media/internal/hls"
@@ -29,6 +30,14 @@ func (s *Service) StreamMagnet(magnet string) (string, error) {
 	}
 
 	<-t.GotInfo()
+
+	// set higher priority to the first 1% pieces
+	info := t.Info()
+	numPieces := info.NumPieces()
+	threshold := int(math.Ceil(float64(numPieces) / 100))
+	for i := 0; i < threshold; i++ {
+		t.Piece(i).SetPriority(torrent.PiecePriorityNow)
+	}
 
 	dirName, filepath, hlspath := stringify(t.Info().Name)
 
