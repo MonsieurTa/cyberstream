@@ -13,6 +13,9 @@ stop:
 
 restart: stop start
 
+test:
+	go test -v ./pkg/...
+
 flush:
 	pm2 flush
 
