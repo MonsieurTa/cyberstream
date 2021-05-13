@@ -17,7 +17,7 @@ func NewSubsPlease() SubsPlease {
 	}
 }
 
-func (s *subsPlease) Latests() ([]Episode, error) {
+func (s *subsPlease) Latest() ([]Episode, error) {
 	url := API_URL + `?f=latest&tz=Europe/Paris`
 	resp, err := s.c.Get(url)
 	if err != nil {
@@ -44,4 +44,3 @@ func (s *subsPlease) Latests() ([]Episode, error) {
 	sort.Sort(byReleaseDate(rv))
 	return rv, nil
 }
-

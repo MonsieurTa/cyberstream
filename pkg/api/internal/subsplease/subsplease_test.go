@@ -1,7 +1,6 @@
 package subsplease
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,7 +10,6 @@ func TestSubsPlease(t *testing.T) {
 	repo := NewSubsPlease()
 	assert.NotNil(t, repo)
 
-	rv, err := repo.Latests()
+	_, err := repo.Latest()
 	assert.Nil(t, err)
-	fmt.Printf("%v\n", rv)
 }
