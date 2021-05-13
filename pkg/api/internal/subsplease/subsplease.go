@@ -1,4 +1,4 @@
-package repository
+package subsplease
 
 import (
 	"encoding/json"
@@ -10,33 +10,33 @@ const (
 	API_URL = "https://subsplease.org/api"
 )
 
-type SubsPlease struct {
-	c *http.Client
-}
-
-type episode struct {
+type Episode struct {
 	Time        string           `json:"time"`
 	ReleaseDate string           `json:"release_date"`
 	Show        string           `json:"show"`
 	Episode     string           `json:"episode"`
-	Downloads   []downloadOption `json:"downloads"`
+	Downloads   []DownloadOption `json:"downloads"`
 	Xdcc        string           `json:"xdcc"`
 	ImageUrl    string           `json:"image_url"`
 	Page        string           `json:"page"`
 }
 
-type downloadOption struct {
+type DownloadOption struct {
 	Res    string `json:"res"`
 	Magnet string `json:"magnet"`
 }
 
-func NewSubsPlease() *SubsPlease {
-	return &SubsPlease{
+type subsPlease struct {
+	c *http.Client
+}
+
+func NewSubsPlease() SubsPlease {
+	return &subsPlease{
 		c: http.DefaultClient,
 	}
 }
 
-func (s *SubsPlease) Latests() ([]episode, error) {
+func (s *subsPlease) Latests() ([]Episode, error) {
 	url := API_URL + `?f=latest&tz=Europe/Paris`
 	resp, err := s.c.Get(url)
 	if err != nil {
@@ -49,13 +49,13 @@ func (s *SubsPlease) Latests() ([]episode, error) {
 		return nil, err
 	}
 
-	var res map[string]episode
+	var res map[string]Episode
 	err = json.Unmarshal(b, &res)
 	if err != nil {
 		return nil, err
 	}
 
-	rv := make([]episode, 0, len(res))
+	rv := make([]Episode, 0, len(res))
 	for _, v := range res {
 		rv = append(rv, v)
 	}
