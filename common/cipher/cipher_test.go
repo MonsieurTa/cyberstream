@@ -35,7 +35,7 @@ func TestTranslator(t *testing.T) {
 		decrypted, err := translator.Decrypt(encrypted)
 		assert.Nil(t, err)
 
-		expected := hex.EncodeToString(bytes)
+		expected := string(bytes)
 		assert.Equal(t, expected, decrypted)
 	}
 
@@ -48,7 +48,7 @@ func TestTranslator(t *testing.T) {
 		decrypted, err := translator.Decrypt(data)
 		assert.Nil(t, err)
 
-		expected := hex.EncodeToString(randomDatas[i])
+		expected := string(randomDatas[i])
 		assert.Equal(t, expected, decrypted)
 	}
 }
