@@ -20,10 +20,10 @@ $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
 $(BIN_API): | $(BIN_DIR)
-	go build -o $(BIN_API) cmd/api/main.go
+	go build -v -o $(BIN_API) cmd/api/main.go
 	mv $(BIN_API) $(BIN_DIR)
 $(BIN_MEDIA): | $(BIN_DIR)
-	go build -o $(BIN_MEDIA) cmd/media/main.go
+	go build -v -o $(BIN_MEDIA) cmd/media/main.go
 	mv $(BIN_MEDIA) $(BIN_DIR)
 
 clean:
