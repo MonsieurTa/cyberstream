@@ -26,7 +26,7 @@ func (e *Episode) HighestResolutionMagnet() string {
 }
 
 type DownloadOption struct {
-	Res    int    `json:"res"`
+	Res    int    `json:"res,string"`
 	Magnet string `json:"magnet"`
 }
 
@@ -37,21 +37,23 @@ type subsPlease struct {
 type dateTime time.Time
 
 func (c *dateTime) UnmarshalJSON(b []byte) error {
-	value := strings.Trim(string(b), `"`) //get rid of "
+	value := strings.Trim(string(b), `"`)
 	if value == "" || value == "null" {
 		return nil
 	}
 
-	t, err := time.Parse("01/02/2006", value) //parse time
+	value = strings.Replace(value, "\\", "", -1) // remove escaped characters
+
+	t, err := time.Parse("01/02/06", value)
 	if err != nil {
 		return err
 	}
-	*c = dateTime(t) //set result using the pointer
+	*c = dateTime(t)
 	return nil
 }
 
 func (c dateTime) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + time.Time(c).Format("02/01/2006") + `"`), nil
+	return []byte(`"` + time.Time(c).Format("01/02/06") + `"`), nil
 }
 
 type byReleaseDate []Episode
