@@ -10,26 +10,6 @@ const (
 	API_URL = "https://subsplease.org/api"
 )
 
-type Episode struct {
-	Time        string           `json:"time"`
-	ReleaseDate string           `json:"release_date"`
-	Show        string           `json:"show"`
-	Episode     string           `json:"episode"`
-	Downloads   []DownloadOption `json:"downloads"`
-	Xdcc        string           `json:"xdcc"`
-	ImageUrl    string           `json:"image_url"`
-	Page        string           `json:"page"`
-}
-
-type DownloadOption struct {
-	Res    string `json:"res"`
-	Magnet string `json:"magnet"`
-}
-
-type subsPlease struct {
-	c *http.Client
-}
-
 func NewSubsPlease() SubsPlease {
 	return &subsPlease{
 		c: http.DefaultClient,
