@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"sort"
 )
 
 const (
@@ -37,7 +38,10 @@ func (s *subsPlease) Latests() ([]Episode, error) {
 
 	rv := make([]Episode, 0, len(res))
 	for _, v := range res {
+		sort.Sort(byResolution(v.Downloads))
 		rv = append(rv, v)
 	}
+	sort.Sort(byReleaseDate(rv))
 	return rv, nil
 }
+
