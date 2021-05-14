@@ -16,7 +16,6 @@ const (
 	ERR_VALIDATION     = "error_validation"
 )
 
-// TODO create Stream service
 func Stream(service media.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		v := validator.NewStreamRequestValidator()

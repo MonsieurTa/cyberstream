@@ -8,13 +8,13 @@ import (
 	"io"
 )
 
-type translator struct {
+type cryptograph struct {
 	key   []byte
 	block cipher.Block
 	gcm   cipher.AEAD
 }
 
-func NewTranslator(aesKey string) (Translator, error) {
+func NewCryptograph(aesKey string) (Cryptograph, error) {
 	key, err := hex.DecodeString(aesKey)
 	if err != nil {
 		return nil, err
@@ -29,28 +29,30 @@ func NewTranslator(aesKey string) (Translator, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &translator{key, block, gcm}, nil
+	return &cryptograph{key, block, gcm}, nil
 }
 
-func (t *translator) Encrypt(toEncrypt []byte) (string, error) {
+func (t *cryptograph) Encrypt(toEncrypt []byte) (string, error) {
 	nonce := make([]byte, t.gcm.NonceSize())
+
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
 		return "", err
 	}
 	return hex.EncodeToString(t.gcm.Seal(nonce, nonce, toEncrypt, nil)), nil
 }
 
-func (t *translator) Decrypt(toDecrypt []byte) (string, error) {
+func (t *cryptograph) Decrypt(toDecrypt []byte) (string, error) {
 	nonceSize := t.gcm.NonceSize()
+
 	nonce, encrypted := toDecrypt[:nonceSize], toDecrypt[nonceSize:]
 	plaintext, err := t.gcm.Open(nil, nonce, encrypted, nil)
 	if err != nil {
 		return "", err
 	}
-	return hex.EncodeToString(plaintext), nil
+	return string(plaintext), nil
 }
 
-func (t *translator) EncryptBatch(toEncrypt [][]byte) ([]string, error) {
+func (t *cryptograph) EncryptBatch(toEncrypt [][]byte) ([]string, error) {
 	rv := make([]string, len(toEncrypt))
 	for i, v := range toEncrypt {
 		nonce := make([]byte, t.gcm.NonceSize())

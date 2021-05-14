@@ -6,11 +6,14 @@ import (
 	"github.com/MonsieurTa/hypertube/common/infrastructure/repository"
 	"github.com/MonsieurTa/hypertube/pkg/api/handler"
 	"github.com/MonsieurTa/hypertube/pkg/api/internal/inmem"
+	s "github.com/MonsieurTa/hypertube/pkg/api/internal/subsplease"
 	"github.com/MonsieurTa/hypertube/pkg/api/middleware"
 	auth "github.com/MonsieurTa/hypertube/pkg/api/usecase/authentication"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/fortytwo"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/provider"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/state"
+	"github.com/MonsieurTa/hypertube/pkg/api/usecase/stream"
+	"github.com/MonsieurTa/hypertube/pkg/api/usecase/subsplease"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/user"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -19,7 +22,7 @@ import (
 type App struct {
 	db       *gorm.DB
 	router   *gin.Engine
-	services Services
+	services *Services
 }
 
 type Services struct {
@@ -31,35 +34,21 @@ type Services struct {
 
 	user     user.UseCase
 	provider provider.UseCase
+
+	stream stream.UseCase
+
+	subsplease subsplease.UseCase
 }
 
 func NewApp(db *gorm.DB, router *gin.Engine) (*App, error) {
-	userRepo := repository.NewUserGORM(db)
-	providerRepo := repository.NewProviderGORM(db)
-	stateInMem := inmem.NewStateInMem()
-
-	ftService, err := fortytwo.NewService()
-	if err != nil {
-		return nil, err
-	}
-
-	stateService := state.NewService(stateInMem)
-	authService := auth.NewService(userRepo)
-	userService := user.NewService(userRepo)
-	providerService, err := provider.NewService(providerRepo)
+	services, err := registerServices(db)
 	if err != nil {
 		return nil, err
 	}
 	return &App{
 		db,
 		router,
-		Services{
-			stateService,
-			authService,
-			ftService,
-			userService,
-			providerService,
-		},
+		services,
 	}, nil
 }
 
@@ -67,7 +56,7 @@ func (a *App) MakeHandlers() {
 	secret := os.Getenv("JWT_SECRET")
 	v1 := a.router.Group("/api")
 
-	v1.POST("/stream", handler.RequestStream)
+	v1.POST("/stream", handler.RequestStream(a.services.stream))
 
 	auth := v1.Group("/oauth")
 	auth.POST("/token", handler.AccessTokenGeneration(a.services.auth))
@@ -83,6 +72,43 @@ func (a *App) MakeHandlers() {
 	movies := v1.Group("/movies") // TODO
 	movies.GET("/")               // TODO
 	movies.GET("/:id")            // TODO
+
+	subsplease := v1.Group("/subsplease")
+	subsplease.GET("/latest", handler.SubsPleaseLatestEpisodes(a.services.subsplease))
+}
+
+func registerServices(db *gorm.DB) (*Services, error) {
+	userRepo := repository.NewUserGORM(db)
+	providerRepo := repository.NewProviderGORM(db)
+	stateInMem := inmem.NewStateInMem()
+	subspleaseRepo := s.NewSubsPlease()
+	movieRepository := repository.NewMovieGORM(db)
+
+	ftService, err := fortytwo.NewService()
+	if err != nil {
+		return nil, err
+	}
+
+	stateService := state.NewService(stateInMem)
+	authService := auth.NewService(userRepo)
+	userService := user.NewService(userRepo)
+	providerService, err := provider.NewService(providerRepo)
+
+	streamService := stream.NewService(movieRepository)
+
+	subspleaseService := subsplease.NewService(subspleaseRepo)
+	if err != nil {
+		return nil, err
+	}
+	return &Services{
+		stateService,
+		authService,
+		ftService,
+		userService,
+		providerService,
+		streamService,
+		subspleaseService,
+	}, nil
 }
 
 func (a *App) Run() error {

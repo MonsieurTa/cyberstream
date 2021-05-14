@@ -4,8 +4,9 @@ BIN_DIR = bin
 
 all: $(BIN_API) $(BIN_MEDIA)
 
-start: all
+start:
 	docker-compose up -d psql
+	sleep 3s
 	pm2 start bin/api bin/media
 
 stop:
@@ -13,7 +14,13 @@ stop:
 
 restart: stop start
 
-flush:
+test:
+	go test -v ./pkg/...
+
+flushdb:
+	docker rm -f -v hypertube-api_psql_1
+
+flushlogs:
 	pm2 flush
 
 $(BIN_DIR):

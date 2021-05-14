@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"errors"
+
 	"github.com/MonsieurTa/hypertube/common/entity"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -19,6 +21,9 @@ func (m MovieGORM) FindByID(movieID uuid.UUID) (*entity.Movie, error) {
 
 	err := m.db.First(&movie, "id = ?", movieID).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &movie, nil
@@ -33,4 +38,12 @@ func (m MovieGORM) SearchByName(pattern string) (*entity.Movie, error) {
 		return nil, err
 	}
 	return &movie, nil
+}
+
+func (m MovieGORM) Create(movie *entity.Movie) (uuid.UUID, error) {
+	err := m.db.Create(movie).Error
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return movie.ID, nil
 }

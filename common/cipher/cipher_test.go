@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTranslator(t *testing.T) {
+func TestCryptograph(t *testing.T) {
 	aesKey := make([]byte, 32)
 	_, err := io.ReadFull(rand.Reader, aesKey)
 	assert.Nil(t, err)
 
-	translator, err := NewTranslator(hex.EncodeToString(aesKey))
+	c, err := NewCryptograph(hex.EncodeToString(aesKey))
 	assert.Nil(t, err)
 
 	sizes := []int{128, 256, 512, 1024}
@@ -26,29 +26,29 @@ func TestTranslator(t *testing.T) {
 	}
 
 	for _, bytes := range randomDatas {
-		data, err := translator.Encrypt(bytes)
+		data, err := c.Encrypt(bytes)
 		assert.Nil(t, err)
 
 		encrypted, err := hex.DecodeString(data)
 		assert.Nil(t, err)
 
-		decrypted, err := translator.Decrypt(encrypted)
+		decrypted, err := c.Decrypt(encrypted)
 		assert.Nil(t, err)
 
-		expected := hex.EncodeToString(bytes)
+		expected := string(bytes)
 		assert.Equal(t, expected, decrypted)
 	}
 
-	encryptedDatas, err := translator.EncryptBatch(randomDatas)
+	encryptedDatas, err := c.EncryptBatch(randomDatas)
 	assert.Nil(t, err)
 	for i, encrypted := range encryptedDatas {
 		data, err := hex.DecodeString(encrypted)
 		assert.Nil(t, err)
 
-		decrypted, err := translator.Decrypt(data)
+		decrypted, err := c.Decrypt(data)
 		assert.Nil(t, err)
 
-		expected := hex.EncodeToString(randomDatas[i])
+		expected := string(randomDatas[i])
 		assert.Equal(t, expected, decrypted)
 	}
 }
