@@ -15,7 +15,7 @@ const (
 	ERR_STREAM_SERVICE       = "error_stream_service"
 )
 
-func RequestStream(streamService stream.UseCase) gin.HandlerFunc {
+func RequestStream(service stream.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		validator := validator.NewUnstoredMovieValidator()
 		err := validator.Validate(c)
@@ -25,7 +25,7 @@ func RequestStream(streamService stream.UseCase) gin.HandlerFunc {
 		}
 		input := validator.Value()
 
-		url, err := streamService.Stream(&input)
+		url, err := service.Stream(&input)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{ERR_STREAM_SERVICE: err.Error()})
 			return

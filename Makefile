@@ -6,6 +6,7 @@ all: $(BIN_API) $(BIN_MEDIA)
 
 start:
 	docker-compose up -d psql
+	sleep 3s
 	pm2 start bin/api bin/media
 
 stop:
