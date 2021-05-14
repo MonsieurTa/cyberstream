@@ -5,6 +5,7 @@ import (
 
 	"github.com/MonsieurTa/hypertube/pkg/media/handler"
 	"github.com/MonsieurTa/hypertube/pkg/media/usecase/media"
+	torrentLogger "github.com/anacrolix/log"
 	"github.com/anacrolix/torrent"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,7 @@ func initEnv() {
 
 func newTorrentClient() *torrent.Client {
 	cfg := torrent.NewDefaultClientConfig()
+	cfg.Logger = torrentLogger.Discard
 	cfg.DataDir = os.Getenv("DOWNLOAD_FILES_PATH")
 	tc, err := torrent.NewClient(cfg)
 	if err != nil {
