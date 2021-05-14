@@ -14,7 +14,7 @@ type Service struct {
 	endpoint string
 }
 
-func NewService(repo Repository) *Service {
+func NewService(repo Repository) UseCase {
 	return &Service{
 		repo:     repo,
 		endpoint: os.Getenv("SUBSPLEASE_API_URL"),

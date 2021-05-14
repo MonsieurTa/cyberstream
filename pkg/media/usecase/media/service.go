@@ -15,7 +15,7 @@ type Service struct {
 	tc *torrent.Client
 }
 
-func NewService(tc *torrent.Client) *Service {
+func NewService(tc *torrent.Client) UseCase {
 	return &Service{
 		tc,
 	}
