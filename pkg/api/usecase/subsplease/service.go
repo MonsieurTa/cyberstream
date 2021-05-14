@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/MonsieurTa/hypertube/common/cipher"
 	"github.com/MonsieurTa/hypertube/common/entity"
 	"github.com/MonsieurTa/hypertube/pkg/api/internal/cipher"
 )
