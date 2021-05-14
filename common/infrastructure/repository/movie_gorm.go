@@ -39,3 +39,11 @@ func (m MovieGORM) SearchByName(pattern string) (*entity.Movie, error) {
 	}
 	return &movie, nil
 }
+
+func (m MovieGORM) Create(movie *entity.Movie) (uuid.UUID, error) {
+	err := m.db.Create(movie).Error
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return movie.ID, nil
+}
