@@ -10,9 +10,9 @@ import (
 	"github.com/MonsieurTa/hypertube/pkg/api/middleware"
 	auth "github.com/MonsieurTa/hypertube/pkg/api/usecase/authentication"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/fortytwo"
-	"github.com/MonsieurTa/hypertube/pkg/api/usecase/movie"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/provider"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/state"
+	"github.com/MonsieurTa/hypertube/pkg/api/usecase/stream"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/subsplease"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/user"
 	"github.com/gin-gonic/gin"
@@ -34,7 +34,8 @@ type Services struct {
 
 	user     user.UseCase
 	provider provider.UseCase
-	movie    movie.UseCase
+
+	stream stream.UseCase
 
 	subsplease subsplease.UseCase
 }
@@ -55,7 +56,7 @@ func (a *App) MakeHandlers() {
 	secret := os.Getenv("JWT_SECRET")
 	v1 := a.router.Group("/api")
 
-	v1.POST("/stream", handler.RequestStream(a.services.movie))
+	v1.POST("/stream", handler.RequestStream(a.services.stream))
 
 	auth := v1.Group("/oauth")
 	auth.POST("/token", handler.AccessTokenGeneration(a.services.auth))
@@ -92,7 +93,8 @@ func registerServices(db *gorm.DB) (*Services, error) {
 	authService := auth.NewService(userRepo)
 	userService := user.NewService(userRepo)
 	providerService, err := provider.NewService(providerRepo)
-	movieService := movie.NewService(movieRepository)
+
+	streamService := stream.NewService(movieRepository)
 
 	subspleaseService := subsplease.NewService(subspleaseRepo)
 	if err != nil {
@@ -104,7 +106,7 @@ func registerServices(db *gorm.DB) (*Services, error) {
 		ftService,
 		userService,
 		providerService,
-		movieService,
+		streamService,
 		subspleaseService,
 	}, nil
 }

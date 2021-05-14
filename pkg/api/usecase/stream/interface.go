@@ -1,4 +1,4 @@
-package movie
+package stream
 
 import (
 	"github.com/MonsieurTa/hypertube/common/entity"
@@ -19,6 +19,5 @@ type Repository interface {
 }
 
 type UseCase interface {
-	FindByID(id uuid.UUID) (*entity.Movie, error)
-	Register(movie *entity.Movie) (uuid.UUID, error)
+	Stream(m *entity.Movie) (string, error)
 }
