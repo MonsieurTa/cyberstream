@@ -14,5 +14,5 @@ type Repository interface {
 }
 
 type UseCase interface {
-	Latest() ([]entity.Movie, error)
+	Latest() ([]*entity.Movie, error)
 }
