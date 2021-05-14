@@ -6,7 +6,6 @@ import (
 
 	"github.com/MonsieurTa/hypertube/common/cipher"
 	"github.com/MonsieurTa/hypertube/common/entity"
-	"github.com/MonsieurTa/hypertube/pkg/api/internal/cipher"
 )
 
 type Service struct {
@@ -41,7 +40,7 @@ func (s *Service) Latest() ([]*entity.Movie, error) {
 			log.Println(err.Error())
 			continue
 		}
-		name := e.Show + " " + e.Episode
+		name := e.Show + " - Episode " + e.Episode
 		rv = append(rv, entity.NewMovie(name, "", encrypted))
 	}
 	return rv, nil
