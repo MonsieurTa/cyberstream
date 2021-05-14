@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"errors"
+
 	"github.com/MonsieurTa/hypertube/common/entity"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -19,6 +21,9 @@ func (m MovieGORM) FindByID(movieID uuid.UUID) (*entity.Movie, error) {
 
 	err := m.db.First(&movie, "id = ?", movieID).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &movie, nil
