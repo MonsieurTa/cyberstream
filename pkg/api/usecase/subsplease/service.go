@@ -27,7 +27,7 @@ func (s *Service) Latest() ([]*entity.Movie, error) {
 		return []*entity.Movie{}, err
 	}
 
-	t, err := cipher.NewTranslator(os.Getenv("AES_KEY"))
+	t, err := cipher.NewCryptograph(os.Getenv("AES_KEY"))
 	if err != nil {
 		return []*entity.Movie{}, err
 	}

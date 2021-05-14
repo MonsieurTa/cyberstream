@@ -59,7 +59,7 @@ func (v UnstoredMovieValidator) Value() entity.Movie {
 }
 
 func decryptMagnet(encryptedMagnet string) (string, error) {
-	t, err := cipher.NewTranslator(os.Getenv("AES_KEY"))
+	t, err := cipher.NewCryptograph(os.Getenv("AES_KEY"))
 	if err != nil {
 		return "", err
 	}
