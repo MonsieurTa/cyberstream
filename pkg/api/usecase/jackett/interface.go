@@ -1,9 +1,13 @@
 package jackett
 
-import "github.com/MonsieurTa/hypertube/common/infrastructure/repository"
+import (
+	"context"
+
+	"github.com/webtor-io/go-jackett"
+)
 
 type Reader interface {
-	Indexers(configured bool) (*repository.Indexers, error)
+	Fetch(ctx context.Context, fr *jackett.FetchRequest) (*jackett.FetchResponse, error)
 }
 
 type Writer interface{}
@@ -14,7 +18,5 @@ type Repository interface {
 }
 
 type UseCase interface {
-	AllIndexers() (*repository.Indexers, error)
-	ConfiguredIndexers() (*repository.Indexers, error)
-	Search()
+	Fetch(fr *jackett.FetchRequest) (*jackett.FetchResponse, error)
 }

@@ -1,6 +1,10 @@
 package jackett
 
-import "github.com/MonsieurTa/hypertube/common/infrastructure/repository"
+import (
+	"context"
+
+	"github.com/webtor-io/go-jackett"
+)
 
 type Service struct {
 	repo Repository
@@ -10,13 +14,7 @@ func NewService(repo Repository) UseCase {
 	return &Service{repo}
 }
 
-func (s *Service) AllIndexers() (*repository.Indexers, error) {
-	return s.repo.Indexers(false)
-}
-
-func (s *Service) ConfiguredIndexers() (*repository.Indexers, error) {
-	return s.repo.Indexers(true)
-}
-
-func (s *Service) Search() {
+func (s *Service) Fetch(fr *jackett.FetchRequest) (*jackett.FetchResponse, error) {
+	ctx := context.Background()
+	return s.repo.Fetch(ctx, fr)
 }
