@@ -15,11 +15,11 @@ import (
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/stream"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/user"
 	"github.com/gin-gonic/gin"
-	jackettRepo "github.com/webtor-io/go-jackett"
+	gojackett "github.com/webtor-io/go-jackett"
 	"gorm.io/gorm"
 )
 
-type App struct {
+type Server struct {
 	db       *gorm.DB
 	router   *gin.Engine
 	services *Services
@@ -36,39 +36,42 @@ type Services struct {
 	user     user.UseCase
 }
 
-func NewServer(db *gorm.DB, router *gin.Engine) (*App, error) {
+func NewServer(db *gorm.DB, router *gin.Engine) (*Server, error) {
 	services, err := registerServices(db)
 	if err != nil {
 		return nil, err
 	}
-	return &App{
+	return &Server{
 		db,
 		router,
 		services,
 	}, nil
 }
 
-func (a *App) MakeHandlers() {
+func (s *Server) MakeHandlers() {
 	secret := os.Getenv("JWT_SECRET")
-	v1 := a.router.Group("/api")
+	v1 := s.router.Group("/api")
 
-	v1.POST("/stream", handler.RequestStream(a.services.stream))
+	v1.POST("/stream", handler.RequestStream(s.services.stream))
 
 	auth := v1.Group("/oauth")
-	auth.POST("/token", handler.AccessTokenGeneration(a.services.auth))
-	auth.GET("/fortytwo/callback", handler.RedirectCallback(a.services.fortytwo, a.services.state))
-	auth.GET("/fortytwo/authorize_uri", handler.GetAuthorizeURI(a.services.fortytwo, a.services.state))
+	auth.POST("/token", handler.AccessTokenGeneration(s.services.auth))
+	auth.GET("/fortytwo/callback", handler.RedirectCallback(s.services.fortytwo, s.services.state))
+	auth.GET("/fortytwo/authorize_uri", handler.GetAuthorizeURI(s.services.fortytwo, s.services.state))
 
 	users := v1.Group("/users")
 	users.GET("/", middleware.Auth(secret))    // TODO
 	users.GET("/:id", middleware.Auth(secret)) // TODO
-	users.PATCH("/:id", middleware.Auth(secret), handler.UsersUpdate(a.services.user))
-	users.POST("/", handler.UsersRegistration(a.services.user))
+	users.PATCH("/:id", middleware.Auth(secret), handler.UsersUpdate(s.services.user))
+	users.POST("/", handler.UsersRegistration(s.services.user))
 
 	movies := v1.Group("/movies") // TODO
 	movies.GET("/")               // TODO
 	movies.GET("/:id")            // TODO
 
+	anime := v1.Group("/jackett") // TODO
+	anime.GET("/", handler.JackettSearch(s.services.jackett))
+	anime.GET("/categories", handler.JackettCategories(s.services.jackett))
 }
 
 func registerServices(db *gorm.DB) (*Services, error) {
@@ -77,7 +80,11 @@ func registerServices(db *gorm.DB) (*Services, error) {
 		return nil, err
 	}
 
-	jackettRepo := jackettRepo.NewJackett(&jackettRepo.Settings{})
+	jackettRepo := gojackett.NewJackett(&gojackett.Settings{
+		ApiURL: os.Getenv("JACKETT_API_URL"),
+		ApiKey: os.Getenv("JACKETT_API_KEY"),
+	})
+
 	providerRepo := repository.NewProviderGORM(db)
 	movieRepository := repository.NewMovieGORM(db)
 	stateInMem := inmem.NewStateInMem()
@@ -104,7 +111,7 @@ func registerServices(db *gorm.DB) (*Services, error) {
 	}, nil
 }
 
-func (a *App) Run() error {
+func (s *Server) Run() error {
 	port := ":" + os.Getenv("API_PORT")
-	return a.router.Run(port)
+	return s.router.Run(port)
 }
