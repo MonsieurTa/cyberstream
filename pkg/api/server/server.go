@@ -72,6 +72,7 @@ func (s *Server) MakeHandlers() {
 	anime := v1.Group("/jackett") // TODO
 	anime.GET("/", handler.JackettSearch(s.services.jackett))
 	anime.GET("/categories", handler.JackettCategories(s.services.jackett))
+	anime.GET("/indexers", handler.JackettIndexers(s.services.jackett))
 }
 
 func registerServices(db *gorm.DB) (*Services, error) {

@@ -35,3 +35,8 @@ func (s *Service) Search(pattern string, categories []uint) (*jackett.FetchRespo
 	}
 	return s.fetch(fr)
 }
+
+func (s *Service) ConfiguredIndexers() (*jackett.XMLIndexers, error) {
+	ctx := context.Background()
+	return s.repo.Indexers(ctx, true)
+}

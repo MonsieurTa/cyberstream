@@ -34,3 +34,14 @@ func JackettCategories(service jackett.UseCase) gin.HandlerFunc {
 		c.JSON(http.StatusOK, cats)
 	}
 }
+
+func JackettIndexers(service jackett.UseCase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		idxs, err := service.ConfiguredIndexers()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, idxs)
+	}
+}
