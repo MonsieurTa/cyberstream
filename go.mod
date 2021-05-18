@@ -20,4 +20,4 @@ require (
 	gorm.io/gorm v1.21.6
 )
 
-replace github.com/webtor-io/go-jackett => github.com/MonsieurTa/go-jackett v0.0.1
+replace github.com/webtor-io/go-jackett => github.com/MonsieurTa/go-jackett v0.0.3
