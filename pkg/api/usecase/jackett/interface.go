@@ -18,5 +18,6 @@ type Repository interface {
 }
 
 type UseCase interface {
-	Fetch(fr *jackett.FetchRequest) (*jackett.FetchResponse, error)
+	Search(pattern string, categories []uint) (*jackett.FetchResponse, error)
+	Categories() map[string]uint
 }
