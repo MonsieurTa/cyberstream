@@ -1,4 +1,4 @@
-package app
+package server
 
 import (
 	"os"
@@ -6,16 +6,16 @@ import (
 	"github.com/MonsieurTa/hypertube/common/infrastructure/repository"
 	"github.com/MonsieurTa/hypertube/pkg/api/handler"
 	"github.com/MonsieurTa/hypertube/pkg/api/internal/inmem"
-	s "github.com/MonsieurTa/hypertube/pkg/api/internal/subsplease"
 	"github.com/MonsieurTa/hypertube/pkg/api/middleware"
 	auth "github.com/MonsieurTa/hypertube/pkg/api/usecase/authentication"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/fortytwo"
+	"github.com/MonsieurTa/hypertube/pkg/api/usecase/jackett"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/provider"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/state"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/stream"
-	"github.com/MonsieurTa/hypertube/pkg/api/usecase/subsplease"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/user"
 	"github.com/gin-gonic/gin"
+	jackettRepo "github.com/webtor-io/go-jackett"
 	"gorm.io/gorm"
 )
 
@@ -27,20 +27,16 @@ type App struct {
 
 type Services struct {
 	// tmp cache for token `state`
-	state state.UseCase
-
 	auth     auth.UseCase
 	fortytwo fortytwo.UseCase
-
-	user     user.UseCase
+	jackett  jackett.UseCase
 	provider provider.UseCase
-
-	stream stream.UseCase
-
-	subsplease subsplease.UseCase
+	state    state.UseCase
+	stream   stream.UseCase
+	user     user.UseCase
 }
 
-func NewApp(db *gorm.DB, router *gin.Engine) (*App, error) {
+func NewServer(db *gorm.DB, router *gin.Engine) (*App, error) {
 	services, err := registerServices(db)
 	if err != nil {
 		return nil, err
@@ -73,41 +69,38 @@ func (a *App) MakeHandlers() {
 	movies.GET("/")               // TODO
 	movies.GET("/:id")            // TODO
 
-	subsplease := v1.Group("/subsplease")
-	subsplease.GET("/latest", handler.SubsPleaseLatestEpisodes(a.services.subsplease))
 }
 
 func registerServices(db *gorm.DB) (*Services, error) {
-	userRepo := repository.NewUserGORM(db)
-	providerRepo := repository.NewProviderGORM(db)
-	stateInMem := inmem.NewStateInMem()
-	subspleaseRepo := s.NewSubsPlease()
-	movieRepository := repository.NewMovieGORM(db)
-
 	ftService, err := fortytwo.NewService()
 	if err != nil {
 		return nil, err
 	}
 
-	stateService := state.NewService(stateInMem)
+	jackettRepo := jackettRepo.NewJackett(&jackettRepo.Settings{})
+	providerRepo := repository.NewProviderGORM(db)
+	movieRepository := repository.NewMovieGORM(db)
+	stateInMem := inmem.NewStateInMem()
+	userRepo := repository.NewUserGORM(db)
+
 	authService := auth.NewService(userRepo)
-	userService := user.NewService(userRepo)
+	jackettService := jackett.NewService(jackettRepo)
 	providerService, err := provider.NewService(providerRepo)
-
-	streamService := stream.NewService(movieRepository)
-
-	subspleaseService := subsplease.NewService(subspleaseRepo)
 	if err != nil {
 		return nil, err
 	}
+
+	stateService := state.NewService(stateInMem)
+	streamService := stream.NewService(movieRepository)
+	userService := user.NewService(userRepo)
 	return &Services{
-		stateService,
-		authService,
-		ftService,
-		userService,
-		providerService,
-		streamService,
-		subspleaseService,
+		auth:     authService,
+		fortytwo: ftService,
+		jackett:  jackettService,
+		provider: providerService,
+		state:    stateService,
+		stream:   streamService,
+		user:     userService,
 	}, nil
 }
 
