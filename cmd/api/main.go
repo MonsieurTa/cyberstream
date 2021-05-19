@@ -6,7 +6,7 @@ import (
 
 	"github.com/MonsieurTa/hypertube/common/infrastructure/database"
 	"github.com/MonsieurTa/hypertube/common/validator"
-	a "github.com/MonsieurTa/hypertube/pkg/api/app"
+	"github.com/MonsieurTa/hypertube/pkg/api/server"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -53,7 +53,7 @@ func main() {
 		panic("could not register custom validations")
 	}
 
-	app, err := a.NewApp(db.DB().(*gorm.DB), router)
+	app, err := server.NewServer(db.DB().(*gorm.DB), router)
 	if err != nil {
 		panic(err)
 	}
