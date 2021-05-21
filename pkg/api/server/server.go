@@ -70,7 +70,7 @@ func (s *Server) MakeHandlers() {
 	movies.GET("/:id")            // TODO
 
 	anime := v1.Group("/jackett") // TODO
-	anime.GET("/", handler.JackettSearch(s.services.jackett))
+	anime.GET("/search", handler.JackettSearch(s.services.jackett))
 	anime.GET("/categories", handler.JackettCategories(s.services.jackett))
 	anime.GET("/indexers", handler.JackettIndexers(s.services.jackett))
 }
