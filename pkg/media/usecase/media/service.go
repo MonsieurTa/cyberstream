@@ -3,6 +3,7 @@ package media
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
 	"log"
 	"math"
 	"os"
@@ -31,8 +32,12 @@ func (s *Service) StreamMagnet(magnet string) (string, error) {
 
 	<-t.GotInfo()
 
-	// set higher priority to the first 1% pieces
 	info := t.Info()
+	if info.Files != nil {
+		return "", errors.New("multiple file torrent")
+	}
+
+	// set higher priority to the first 1% pieces
 	numPieces := info.NumPieces()
 	threshold := int(math.Ceil(float64(numPieces) / 100))
 	for i := 0; i < threshold; i++ {
