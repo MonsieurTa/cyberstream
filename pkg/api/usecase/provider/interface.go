@@ -11,7 +11,7 @@ type Reader interface {
 
 type Writer interface {
 	RegisterProviders(providers []entity.Provider) error
-	StoreMovie(provider *entity.Provider, movie *entity.Movie) (uuid.UUID, error)
+	StoreVideo(provider *entity.Provider, video *entity.Video) (uuid.UUID, error)
 }
 
 type Repository interface {
@@ -20,5 +20,5 @@ type Repository interface {
 }
 
 type UseCase interface {
-	StoreMovie(name entity.ProviderName, movie *entity.Movie) (uuid.UUID, error)
+	StoreVideo(name entity.ProviderName, video *entity.Video) (uuid.UUID, error)
 }

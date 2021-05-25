@@ -6,11 +6,11 @@ import (
 )
 
 type Reader interface {
-	FindByID(movieID uuid.UUID) (*entity.Movie, error)
+	FindByID(videoID uuid.UUID) (*entity.Video, error)
 }
 
 type Writer interface {
-	Create(movie *entity.Movie) (uuid.UUID, error)
+	Create(video *entity.Video) (uuid.UUID, error)
 }
 
 type Repository interface {
@@ -19,5 +19,5 @@ type Repository interface {
 }
 
 type UseCase interface {
-	Stream(m *entity.Movie) (string, error)
+	Stream(m *entity.Video) (string, error)
 }

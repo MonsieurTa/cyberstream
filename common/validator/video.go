@@ -18,43 +18,43 @@ var (
 	ErrInvalidMagnet = errors.New("invalid magnet")
 )
 
-type UnstoredMovieValidator struct {
-	Movie struct {
+type UnstoredVideoValidator struct {
+	Video struct {
 		ID     string `json:"id" binding:"required,uuid"`
 		Name   string `json:"name" binding:"required"`
 		Magnet string `json:"magnet" binding:"required"`
-	} `json:"movie"`
+	} `json:"video"`
 
-	output entity.Movie `json:"-"`
+	output entity.Video `json:"-"`
 }
 
-func NewUnstoredMovieValidator() *UnstoredMovieValidator {
-	return &UnstoredMovieValidator{}
+func NewUnstoredVideoValidator() *UnstoredVideoValidator {
+	return &UnstoredVideoValidator{}
 }
 
-func (v *UnstoredMovieValidator) Validate(c *gin.Context) error {
+func (v *UnstoredVideoValidator) Validate(c *gin.Context) error {
 	err := common.Bind(c, v)
 	if err != nil {
 		return err
 	}
 
-	id, err := uuid.Parse(v.Movie.ID)
+	id, err := uuid.Parse(v.Video.ID)
 	if err != nil {
 		return ErrInvalidUUID
 	}
 
-	decryptedMagnet, err := decryptMagnet(v.Movie.Magnet)
+	decryptedMagnet, err := decryptMagnet(v.Video.Magnet)
 	if err != nil {
 		return err
 	}
 
 	v.output.ID = id
-	v.output.Name = v.Movie.Name
+	v.output.Name = v.Video.Name
 	v.output.Magnet = decryptedMagnet
 	return nil
 }
 
-func (v UnstoredMovieValidator) Value() entity.Movie {
+func (v UnstoredVideoValidator) Value() entity.Video {
 	return v.output
 }
 

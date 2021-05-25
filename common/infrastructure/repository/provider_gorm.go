@@ -29,11 +29,11 @@ func (m *ProviderGORM) FindByName(name entity.ProviderName) (*entity.Provider, e
 	return &broadcaster, nil
 }
 
-func (m *ProviderGORM) StoreMovie(provider *entity.Provider, movie *entity.Movie) (uuid.UUID, error) {
+func (m *ProviderGORM) StoreVideo(provider *entity.Provider, video *entity.Video) (uuid.UUID, error) {
 	// https://gorm.io/docs/associations.html#Association-Mode
-	err := m.db.Model(provider).Association("Movies").Append(movie)
+	err := m.db.Model(provider).Association("Videos").Append(video)
 	if err != nil {
 		return uuid.Nil, err
 	}
-	return movie.ID, nil
+	return video.ID, nil
 }

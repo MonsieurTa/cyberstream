@@ -21,13 +21,13 @@ func NewService(repo Repository) (*Service, error) {
 	return &Service{repo}, nil
 }
 
-func (s *Service) StoreMovie(name entity.ProviderName, movie *entity.Movie) (uuid.UUID, error) {
+func (s *Service) StoreVideo(name entity.ProviderName, video *entity.Video) (uuid.UUID, error) {
 	provider, err := s.repo.FindByName(name)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
-	id, err := s.repo.StoreMovie(provider, movie)
+	id, err := s.repo.StoreVideo(provider, video)
 	if err != nil {
 		return uuid.Nil, err
 	}

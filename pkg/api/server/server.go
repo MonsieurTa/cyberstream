@@ -65,9 +65,9 @@ func (s *Server) MakeHandlers() {
 	users.PATCH("/:id", middleware.Auth(secret), handler.UsersUpdate(s.services.user))
 	users.POST("/", handler.UsersRegistration(s.services.user))
 
-	movies := v1.Group("/movies") // TODO
-	movies.GET("/")               // TODO
-	movies.GET("/:id")            // TODO
+	videos := v1.Group("/videos") // TODO
+	videos.GET("/")               // TODO
+	videos.GET("/:id")            // TODO
 
 	anime := v1.Group("/jackett") // TODO
 	anime.GET("/search", handler.JackettSearch(s.services.jackett))
@@ -87,7 +87,7 @@ func registerServices(db *gorm.DB) (*Services, error) {
 	})
 
 	providerRepo := repository.NewProviderGORM(db)
-	movieRepository := repository.NewMovieGORM(db)
+	videoRepository := repository.NewVideoGORM(db)
 	stateInMem := inmem.NewStateInMem()
 	userRepo := repository.NewUserGORM(db)
 
@@ -99,7 +99,7 @@ func registerServices(db *gorm.DB) (*Services, error) {
 	}
 
 	stateService := state.NewService(stateInMem)
-	streamService := stream.NewService(movieRepository)
+	streamService := stream.NewService(videoRepository)
 	userService := user.NewService(userRepo)
 	return &Services{
 		auth:     authService,

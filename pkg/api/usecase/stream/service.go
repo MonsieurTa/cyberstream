@@ -21,31 +21,31 @@ func NewService(repo Repository) UseCase {
 	return &Service{endpoint, repo}
 }
 
-func (s *Service) Stream(m *entity.Movie) (string, error) {
-	storedMovie, err := s.repo.FindByID(m.ID)
+func (s *Service) Stream(video *entity.Video) (string, error) {
+	storedVideo, err := s.repo.FindByID(video.ID)
 	if err != nil {
 		return "", err
 	}
 
-	if storedMovie != nil {
-		return storedMovie.Path, nil
+	if storedVideo != nil {
+		return storedVideo.Path, nil
 	}
 
-	url, err := stream(s.streamEndpoint, m)
+	url, err := stream(s.streamEndpoint, video)
 	if err != nil {
 		return "", err
 	}
-	m.Path = url
+	video.Path = url
 
-	_, err = s.repo.Create(m)
+	_, err = s.repo.Create(video)
 	if err != nil {
 		return "", err
 	}
 	return url, nil
 }
 
-func stream(endpoint string, m *entity.Movie) (string, error) {
-	streamReq := entity.NewStreamRequest(m.Name, m.Magnet)
+func stream(endpoint string, video *entity.Video) (string, error) {
+	streamReq := entity.NewStreamRequest(video.Name, video.Magnet)
 	data, err := json.Marshal(map[string]interface{}{"stream_request": streamReq})
 	if err != nil {
 		return "", err

@@ -33,7 +33,7 @@ func (g dbGORM) Migrate() error {
 	if err := g.db.AutoMigrate(entity.PublicInfo{}); err != nil {
 		return err
 	}
-	if err := g.db.AutoMigrate(entity.Movie{}); err != nil {
+	if err := g.db.AutoMigrate(entity.Video{}); err != nil {
 		return err
 	}
 	if err := g.db.AutoMigrate(entity.Provider{}); err != nil {
