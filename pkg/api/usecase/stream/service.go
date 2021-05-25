@@ -21,8 +21,8 @@ func NewService(repo Repository) UseCase {
 	return &Service{endpoint, repo}
 }
 
-func (s *Service) Stream(video *entity.Video) (string, error) {
-	storedVideo, err := s.repo.FindByID(video.ID)
+func (s *Service) Stream(streamReq *entity.StreamRequest) (string, error) {
+	storedVideo, err := s.repo.FindByName(streamReq.Name)
 	if err != nil {
 		return "", err
 	}
@@ -31,46 +31,51 @@ func (s *Service) Stream(video *entity.Video) (string, error) {
 		return storedVideo.Path, nil
 	}
 
-	url, err := stream(s.streamEndpoint, video)
+	streamResp, err := stream(s.streamEndpoint, streamReq)
 	if err != nil {
 		return "", err
 	}
-	video.Path = url
+
+	video := entity.NewVideo(
+		streamResp.Name,
+		streamResp.FileHash,
+		streamResp.Url,
+		streamReq.Magnet,
+	)
 
 	_, err = s.repo.Create(video)
 	if err != nil {
 		return "", err
 	}
-	return url, nil
+	return streamResp.Url, nil
 }
 
-func stream(endpoint string, video *entity.Video) (string, error) {
-	streamReq := entity.NewStreamRequest(video.Name, video.Magnet)
+func stream(endpoint string, streamReq *entity.StreamRequest) (*entity.StreamResponse, error) {
 	data, err := json.Marshal(map[string]interface{}{"stream_request": streamReq})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	resp, err := http.Post(endpoint, "application/json", bytes.NewReader(data))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", errors.New(string(b))
+		return nil, errors.New(string(b))
 	}
 
 	var streamResponse entity.StreamResponse
 
 	err = json.Unmarshal(b, &streamResponse)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return streamResponse.Url, nil
+	return &streamResponse, nil
 }

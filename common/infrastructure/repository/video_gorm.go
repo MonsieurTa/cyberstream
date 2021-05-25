@@ -29,6 +29,19 @@ func (m VideoGORM) FindByID(videoID uuid.UUID) (*entity.Video, error) {
 	return &video, nil
 }
 
+func (m VideoGORM) FindByName(name string) (*entity.Video, error) {
+	video := entity.Video{}
+
+	err := m.db.First(&video, "id = ?", name).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &video, nil
+}
+
 func (m VideoGORM) SearchByName(pattern string) (*entity.Video, error) {
 	video := entity.Video{}
 

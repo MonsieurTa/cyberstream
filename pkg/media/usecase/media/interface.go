@@ -1,5 +1,7 @@
 package media
 
+import "github.com/MonsieurTa/hypertube/common/entity"
+
 type Reader interface{}
 type Writer interface {
 	AddMagnet()
@@ -11,5 +13,5 @@ type Repository interface {
 }
 
 type UseCase interface {
-	StreamMagnet(magnet string) (string, error)
+	StreamMagnet(magnet string) (*entity.StreamResponse, error)
 }

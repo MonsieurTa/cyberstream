@@ -6,14 +6,15 @@ type StreamRequest struct {
 }
 
 type StreamResponse struct {
-	Error string `json:"error"`
-	Url   string `json:"url"`
+	Name     string `json:"name"`
+	FileHash string `json:"file_hash"`
+	Url      string `json:"url"`
 }
 
 func NewStreamRequest(name, magnet string) *StreamRequest {
 	return &StreamRequest{name, magnet}
 }
 
-func NewStreamResponse(url string) *StreamResponse {
-	return &StreamResponse{Url: url}
+func NewStreamResponse(name, fileHash, url string) *StreamResponse {
+	return &StreamResponse{name, fileHash, url}
 }

@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 
+	"github.com/MonsieurTa/hypertube/common/entity"
 	"github.com/MonsieurTa/hypertube/pkg/media/internal/hls"
 	"github.com/anacrolix/torrent"
 )
@@ -22,19 +23,19 @@ func NewService(tc *torrent.Client) UseCase {
 	}
 }
 
-func (s *Service) StreamMagnet(magnet string) (string, error) {
+func (s *Service) StreamMagnet(magnet string) (*entity.StreamResponse, error) {
 	tc := s.tc
 
 	t, err := tc.AddMagnet(magnet)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	<-t.GotInfo()
 
 	info := t.Info()
 	if info.Files != nil {
-		return "", errors.New("multiple file torrent")
+		return nil, errors.New("multiple file torrent")
 	}
 
 	// set higher priority to the first 1% pieces
@@ -51,7 +52,7 @@ func (s *Service) StreamMagnet(magnet string) (string, error) {
 	c := hls.NewHLSConverter(hlspath, t)
 	err = c.Convert()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	c.WaitUntilReady()
@@ -64,7 +65,9 @@ func (s *Service) StreamMagnet(magnet string) (string, error) {
 		}
 	}()
 
-	return filepath, nil
+	url := "http://localhost" + ":" + os.Getenv("MEDIA_PORT") + "/" + filepath
+	rv := entity.NewStreamResponse(t.Name(), t.InfoHash().HexString(), url)
+	return rv, nil
 }
 
 func stringify(name string) (dirName, filepath, hlspath string) {

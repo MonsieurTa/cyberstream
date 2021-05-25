@@ -17,7 +17,7 @@ const (
 
 func RequestStream(service stream.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		validator := validator.NewUnstoredVideoValidator()
+		validator := validator.NewStreamRequestValidator()
 		err := validator.Validate(c)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{ERR_INVALID_PARAMS: err.Error()})
