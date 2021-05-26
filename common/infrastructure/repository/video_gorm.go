@@ -32,7 +32,7 @@ func (m VideoGORM) FindByID(videoID uuid.UUID) (*entity.Video, error) {
 func (m VideoGORM) FindByName(name string) (*entity.Video, error) {
 	video := entity.Video{}
 
-	err := m.db.First(&video, "id = ?", name).Error
+	err := m.db.First(&video, "name = ?", name).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
