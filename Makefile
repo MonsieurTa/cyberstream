@@ -18,7 +18,7 @@ test:
 	go test -v ./pkg/...
 
 flushdb:
-	docker rm -f -v hypertube-api_psql_1
+	docker rm -f -v api_psql_1
 
 flushlogs:
 	pm2 flush
