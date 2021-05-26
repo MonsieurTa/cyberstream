@@ -18,8 +18,8 @@ var (
 
 type StreamRequestValidator struct {
 	StreamRequest struct {
-		Name   string `json:"name" bindind:"required,min=1"`
-		Magnet string `json:"magnet" bindind:"required,min=1"`
+		Name   string `form:"name" json:"name" bindind:"required,min=1"`
+		Magnet string `form:"magnet" json:"magnet" bindind:"required,min=1"`
 	} `json:"stream_request"`
 
 	output entity.StreamRequest `json:"-"`
