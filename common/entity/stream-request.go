@@ -1,8 +1,8 @@
 package entity
 
 type StreamRequest struct {
-	Name   string `json:"name"`
-	Magnet string `json:"magnet"`
+	Name   string `form:"name" json:"name"`
+	Magnet string `form:"magnet" json:"magnet"`
 }
 
 type StreamResponse struct {
