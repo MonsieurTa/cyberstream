@@ -51,7 +51,7 @@ func (s *Service) Stream(streamReq *entity.StreamRequest) (string, error) {
 }
 
 func stream(endpoint string, streamReq *entity.StreamRequest) (*entity.StreamResponse, error) {
-	data, err := json.Marshal(map[string]interface{}{"stream_request": streamReq})
+	data, err := json.Marshal(streamReq)
 	if err != nil {
 		return nil, err
 	}
