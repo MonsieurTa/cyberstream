@@ -1,15 +1,12 @@
 package media
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
-	"errors"
 	"log"
-	"math"
 	"os"
 
 	"github.com/MonsieurTa/hypertube/common/entity"
 	"github.com/MonsieurTa/hypertube/pkg/media/internal/hls"
+	"github.com/MonsieurTa/hypertube/pkg/media/internal/streaminfo"
 	"github.com/anacrolix/torrent"
 )
 
@@ -18,66 +15,77 @@ type Service struct {
 }
 
 func NewService(tc *torrent.Client) UseCase {
-	return &Service{
-		tc,
-	}
+	return &Service{tc}
 }
 
-func (s *Service) StreamMagnet(magnet string) (*entity.StreamResponse, error) {
+func (s *Service) Torrent(hash [20]byte) (*torrent.Torrent, bool) {
+	return s.tc.Torrent(hash)
+}
+
+func (s *Service) StreamMagnet(magnet string) *entity.StreamResponse {
+	var resp entity.StreamResponse
+	baseURL := "http://localhost" + ":" + os.Getenv("MEDIA_PORT")
 	tc := s.tc
 
 	t, err := tc.AddMagnet(magnet)
 	if err != nil {
-		return nil, err
+		resp.Error = err.Error()
+		return &resp
 	}
 
+	log.Println("Getting torrent info...")
 	<-t.GotInfo()
 
-	info := t.Info()
-	if info.Files != nil {
-		return nil, errors.New("multiple file torrent")
-	}
-
-	// set higher priority to the first 1% pieces
-	numPieces := info.NumPieces()
-	threshold := int(math.Ceil(float64(numPieces) / 100))
-	for i := 0; i < threshold; i++ {
-		t.Piece(i).SetPriority(torrent.PiecePriorityNow)
-	}
-
-	dirName, filepath, hlspath := stringify(t.Info().Name)
-
-	createHLSFolder(dirName)
-
-	c := hls.NewHLSConverter(hlspath, t)
-	err = c.Convert()
+	streamInfo, err := streaminfo.Extract(t)
 	if err != nil {
-		return nil, err
+		resp.Error = err.Error()
+		return &resp
+	}
+	resp.Name = streamInfo.StreamFile.DisplayPath()
+	resp.InfoHash = streamInfo.InfoHash
+	resp.Ext = streamInfo.StreamFile.Ext()
+
+	if streamInfo.HasSubtitles() {
+		resp.SubtitlesURLs = make([]string, len(streamInfo.SubtitlesFiles))
+		for i, subf := range streamInfo.SubtitlesFiles {
+			subf.SetPriority(torrent.PiecePriorityNow)
+			resp.SubtitlesURLs[i] = baseURL + "/static/" + subf.Path()
+		}
 	}
 
-	c.WaitUntilReady()
+	if streamInfo.StreamFile.Ext() == ".mp4" {
+		streamInfo.StreamFile.SetPriority(torrent.PiecePriorityReadahead)
+		resp.MediaURL = baseURL + "/content?name=" + streamInfo.StreamFile.Path()
+		return &resp
+	}
+
+	log.Println("Starting conversion...")
+	playlistPath, err := convertToHLS(streamInfo.InfoHash, streamInfo.StreamFile.File)
+	if err != nil {
+		resp.Error = err.Error()
+		return &resp
+	}
+	resp.MediaURL = baseURL + "/static/" + playlistPath
+	return &resp
+}
+
+func convertToHLS(infoHash string, f *torrent.File) (string, error) {
+	c := hls.NewHLSConverter(&hls.Config{
+		StreamFile: f,
+		OutputDir:  os.Getenv("STATIC_FILES_PATH") + "/" + infoHash,
+	})
+
+	c.Convert()
 
 	go func() {
 		c.WaitUntilDone()
-		err := c.Close()
-		if err != nil {
-			log.Print(err)
-		}
+		c.Close()
 	}()
 
-	url := "http://localhost" + ":" + os.Getenv("MEDIA_PORT") + "/" + filepath
-	rv := entity.NewStreamResponse(t.Name(), t.InfoHash().HexString(), url)
-	return rv, nil
-}
+	err := c.WaitUntilReady()
+	if err != nil {
+		return "", err
+	}
 
-func stringify(name string) (dirName, filepath, hlspath string) {
-	h := sha1.Sum([]byte(name))
-	dirName = hex.EncodeToString(h[:])
-	filepath = dirName + "/" + "out.m3u8"
-	hlspath = os.Getenv("STATIC_FILES_PATH") + "/" + filepath
-	return
-}
-
-func createHLSFolder(dirName string) {
-	os.Mkdir(os.Getenv("STATIC_FILES_PATH")+"/"+dirName, os.ModePerm)
+	return infoHash + "/master.m3u8", nil
 }

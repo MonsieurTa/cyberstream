@@ -1,6 +1,9 @@
 package media
 
-import "github.com/MonsieurTa/hypertube/common/entity"
+import (
+	"github.com/MonsieurTa/hypertube/common/entity"
+	"github.com/anacrolix/torrent"
+)
 
 type Reader interface{}
 type Writer interface {
@@ -13,5 +16,6 @@ type Repository interface {
 }
 
 type UseCase interface {
-	StreamMagnet(magnet string) (*entity.StreamResponse, error)
+	StreamMagnet(magnet string) *entity.StreamResponse
+	Torrent(hash [20]byte) (*torrent.Torrent, bool)
 }
