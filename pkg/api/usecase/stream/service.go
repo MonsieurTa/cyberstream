@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/MonsieurTa/hypertube/common/entity"
 )
@@ -21,33 +22,43 @@ func NewService(repo Repository) UseCase {
 	return &Service{endpoint, repo}
 }
 
-func (s *Service) Stream(streamReq *entity.StreamRequest) (string, error) {
-	storedVideo, err := s.repo.FindByName(streamReq.Name)
+func (s *Service) Stream(streamReq *entity.StreamRequest) (*entity.StreamResponse, error) {
+	storedVideo, err := s.repo.FindByHash(streamReq.InfoHash)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if storedVideo != nil {
-		return storedVideo.Path, nil
+		if err != nil {
+			return nil, err
+		}
+		return &entity.StreamResponse{
+			Name:          storedVideo.Name,
+			Ext:           filepath.Ext(storedVideo.Name),
+			InfoHash:      storedVideo.Hash,
+			MediaURL:      storedVideo.FilePath,
+			SubtitlesURLs: storedVideo.SubtitlesPaths,
+		}, nil
 	}
 
 	streamResp, err := stream(s.streamEndpoint, streamReq)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	video := entity.NewVideo(
 		streamResp.Name,
-		streamResp.FileHash,
-		streamResp.Url,
+		streamResp.InfoHash,
+		streamResp.MediaURL,
 		streamReq.Magnet,
+		streamResp.SubtitlesURLs,
 	)
 
 	_, err = s.repo.Create(video)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return streamResp.Url, nil
+	return streamResp, nil
 }
 
 func stream(endpoint string, streamReq *entity.StreamRequest) (*entity.StreamResponse, error) {

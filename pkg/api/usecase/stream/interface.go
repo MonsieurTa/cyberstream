@@ -8,6 +8,7 @@ import (
 type Reader interface {
 	FindByID(videoID uuid.UUID) (*entity.Video, error)
 	FindByName(name string) (*entity.Video, error)
+	FindByHash(hash string) (*entity.Video, error)
 }
 
 type Writer interface {
@@ -20,5 +21,5 @@ type Repository interface {
 }
 
 type UseCase interface {
-	Stream(streamReq *entity.StreamRequest) (string, error)
+	Stream(streamReq *entity.StreamRequest) (*entity.StreamResponse, error)
 }
