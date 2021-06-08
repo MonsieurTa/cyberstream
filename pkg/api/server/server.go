@@ -56,8 +56,8 @@ func (s *Server) MakeHandlers() {
 
 	auth := v1.Group("/oauth")
 	auth.POST("/token", handler.AccessTokenGeneration(s.services.auth))
-	auth.GET("/fortytwo/callback", handler.RedirectCallback(s.services.fortytwo, s.services.state))
-	auth.GET("/fortytwo/authorize_uri", handler.GetAuthorizeURI(s.services.fortytwo, s.services.state))
+	// auth.GET("/fortytwo/callback", handler.RedirectCallback(s.services.fortytwo, s.services.state))
+	// auth.GET("/fortytwo/authorize_uri", handler.GetAuthorizeURI(s.services.fortytwo, s.services.state))
 
 	users := v1.Group("/users")
 	users.GET("/", middleware.Auth(secret))    // TODO
@@ -76,10 +76,10 @@ func (s *Server) MakeHandlers() {
 }
 
 func registerServices(db *gorm.DB) (*Services, error) {
-	ftService, err := fortytwo.NewService()
-	if err != nil {
-		return nil, err
-	}
+	// ftService, err := fortytwo.NewService()
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	jackettRepo := gojackett.NewJackett(&gojackett.Settings{
 		ApiURL: os.Getenv("JACKETT_API_URL"),
@@ -103,7 +103,7 @@ func registerServices(db *gorm.DB) (*Services, error) {
 	userService := user.NewService(userRepo)
 	return &Services{
 		auth:     authService,
-		fortytwo: ftService,
+		fortytwo: nil,
 		jackett:  jackettService,
 		provider: providerService,
 		state:    stateService,
