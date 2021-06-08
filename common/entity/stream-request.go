@@ -1,20 +1,15 @@
 package entity
 
 type StreamRequest struct {
-	Name   string `form:"name" json:"name"`
-	Magnet string `form:"magnet" json:"magnet"`
+	InfoHash string `form:"info_hash" json:"info_hash" binding:"required"`
+	Magnet   string `form:"magnet" json:"magnet" binding:"required"`
 }
 
 type StreamResponse struct {
-	Name     string `json:"name"`
-	FileHash string `json:"file_hash"`
-	Url      string `json:"url"`
-}
-
-func NewStreamRequest(name, magnet string) *StreamRequest {
-	return &StreamRequest{name, magnet}
-}
-
-func NewStreamResponse(name, fileHash, url string) *StreamResponse {
-	return &StreamResponse{name, fileHash, url}
+	Name          string   `json:"name,omitempty"`
+	Ext           string   `json:"ext,omitempty"`
+	InfoHash      string   `json:"info_hash,omitempty"`
+	MediaURL      string   `json:"media_url,omitempty"`
+	SubtitlesURLs []string `json:"subtitles_urls,omitempty"`
+	Error         string   `json:"error,omitempty"`
 }
