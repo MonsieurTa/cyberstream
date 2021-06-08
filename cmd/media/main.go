@@ -23,7 +23,7 @@ func initEnv() {
 func newTorrentClient() *torrent.Client {
 	cfg := torrent.NewDefaultClientConfig()
 	cfg.Logger = torrentLogger.Discard
-	cfg.DataDir = os.Getenv("DOWNLOAD_FILES_PATH")
+	cfg.DataDir = os.Getenv("STATIC_FILES_PATH")
 	tc, err := torrent.NewClient(cfg)
 	if err != nil {
 		panic("could not create torrent client")
@@ -40,11 +40,12 @@ func main() {
 	router := gin.Default()
 	router.Use(cors.Default())
 
-	router.Static("/", os.Getenv("STATIC_FILES_PATH"))
+	router.Static("/static", os.Getenv("STATIC_FILES_PATH"))
 
-	mediaService := media.NewService(tc)
+	service := media.NewService(tc)
 
-	router.POST("/stream", handler.Stream(mediaService))
+	router.POST("/stream", handler.Stream(service))
+	router.GET("/content", handler.ServeContent(service))
 
 	router.Run(":" + os.Getenv("MEDIA_PORT"))
 }
