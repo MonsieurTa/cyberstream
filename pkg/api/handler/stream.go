@@ -25,11 +25,11 @@ func RequestStream(service stream.UseCase) gin.HandlerFunc {
 		}
 		input := validator.Value()
 
-		url, err := service.Stream(&input)
+		streamResp, err := service.Stream(&input)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{ERR_STREAM_SERVICE: err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, url)
+		c.JSON(http.StatusOK, streamResp)
 	}
 }
