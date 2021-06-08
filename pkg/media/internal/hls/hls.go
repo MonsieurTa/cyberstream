@@ -3,121 +3,190 @@ package hls
 import (
 	"io"
 	"log"
+	"os"
 	"os/exec"
+	"syscall"
 	"time"
 
+	"github.com/MonsieurTa/hypertube/common/file"
 	"github.com/anacrolix/torrent"
 )
 
 type HLSConverter interface {
-	Convert() error
-	WaitUntilReady()
+	Convert()
+	WaitUntilReady() error
 	WaitUntilDone()
-	Close() error
+	Close()
+	PlaylistPath() string
 }
 
 type hlsConverter struct {
-	input   *io.PipeWriter
-	ffmpeg  *exec.Cmd
-	torrent *torrent.Torrent
+	cfg *Config
 
-	dataDst string
+	input  *io.PipeWriter
+	ffmpeg *exec.Cmd
 
-	progress chan int64
-	ready    chan bool
-	done     chan bool
+	ready   chan bool
+	done    chan bool
+	errChan chan error
 }
 
-func NewHLSConverter(dst string, t *torrent.Torrent) HLSConverter {
-	pipeReader, pipeWriter := io.Pipe()
+type Config struct {
+	StreamFile *torrent.File
+	OutputDir  string
+}
 
-	cmd := initFfmpeg(dst)
+func NewHLSConverter(cfg *Config) HLSConverter {
+	cmd := initFfmpeg(cfg.OutputDir)
+
+	pipeReader, pipeWriter := io.Pipe()
 	cmd.Stdin = pipeReader
 	return &hlsConverter{
-		input:    pipeWriter,
-		dataDst:  dst,
-		ffmpeg:   cmd,
-		torrent:  t,
-		progress: make(chan int64),
-		ready:    make(chan bool),
-		done:     make(chan bool),
+		cfg:     cfg,
+		input:   pipeWriter,
+		ffmpeg:  cmd,
+		ready:   make(chan bool),
+		done:    make(chan bool),
+		errChan: make(chan error),
 	}
 }
 
-func (c *hlsConverter) WaitUntilReady() {
-	<-c.ready
+func (c *hlsConverter) PlaylistPath() string {
+	output := c.cfg.OutputDir + "/master.m3u8"
+	return output
+}
+
+func (c *hlsConverter) WaitUntilReady() error {
+	for {
+		select {
+		case err := <-c.errChan:
+			return err
+		case <-c.ready:
+			return nil
+		default:
+		}
+		time.Sleep(time.Microsecond * 100)
+	}
 }
 
 func (c *hlsConverter) WaitUntilDone() {
 	<-c.done
 }
 
-func (c *hlsConverter) Close() error {
-	close(c.progress)
+func (c *hlsConverter) Close() {
 	close(c.ready)
 	close(c.done)
-	return c.ffmpeg.Wait()
+	close(c.errChan)
 }
 
-func initFfmpeg(filepath string) *exec.Cmd {
-	cmd := exec.Command(
-		"ffmpeg",
+func initFfmpeg(outputDir string) *exec.Cmd {
+	input := []string{
 		"-i", "pipe:0",
-		"-c:v", "libx264", "-crf", "21", "-preset", "veryfast",
-		"-c:a", "aac", "-b:a", "128k", "-ac", "2",
+	}
+	codecs := []string{
+		"-preset", "veryfast",
+		"-pix_fmt", "yuv420p",
+		"-crf", "21",
+		"-c:v", "libx264", // video codec
+		"-c:a", "aac", // audio codec
+		"-b:a", "128k", // audio bitrate
+		"-ac", "2", // number of audio channels
+		"-c:s", "webvtt", // subtitle codec
+	}
+	streamMap := []string{
+		"-map", "0:v",
+		"-map", "0:a",
+		"-map", "0:s",
+		"-var_stream_map", "v:0,a:0,s:0,sgroup:subtitle",
+	}
+	hls := []string{
 		"-f", "hls",
 		"-hls_time", "15",
+		"-hls_list_size", "0",
 		"-hls_playlist_type", "event",
-		filepath,
-	)
+		"-master_pl_name", "master.m3u8",
+		outputDir + "/out_%v.m3u8",
+	}
+
+	input = append(input, codecs...)
+	input = append(input, streamMap...)
+	input = append(input, hls...)
+
+	cmd := exec.Command("ffmpeg", input...)
 	return cmd
 }
 
-func (c *hlsConverter) Convert() error {
+func (c *hlsConverter) Convert() {
+	stopGuard := make(chan bool)
+
+	os.MkdirAll(c.cfg.OutputDir, os.ModePerm)
+
 	err := c.ffmpeg.Start()
 	if err != nil {
-		return err
+		c.errChan <- err
+		stopGuard <- true
+		return
 	}
+
 	go c.convert()
 
-	// ready when 1% downloaded
-	go func() {
-		threshold := c.torrent.Length() / 100
-		for at := range c.progress {
-			if at >= threshold {
-				break
-			}
-			time.Sleep(time.Microsecond * 100)
+	// ready when hls out.m3u8 is created
+	playlistPath := c.cfg.OutputDir + "/master.m3u8"
+	go guard(playlistPath, stopGuard, c.ready)
+}
+
+func guard(playlistPath string, stop, ready chan bool) {
+	for {
+		select {
+		case <-stop:
+			return
+		default:
 		}
-		c.ready <- true
-	}()
-	return nil
+		if file.Exists(playlistPath) {
+			ready <- true
+			return
+		}
+		time.Sleep(time.Microsecond * 100)
+	}
 }
 
 func (c *hlsConverter) convert() {
-	r := c.torrent.NewReader()
-	buf := make([]byte, c.torrent.Info().PieceLength)
+	go listenError(c.ffmpeg, c.errChan)
+	defer func() { c.done <- true }()
+
+	r := c.cfg.StreamFile.NewReader()
+	defer r.Close()
+
+	buf := make([]byte, c.cfg.StreamFile.Torrent().Info().PieceLength)
 	at := int64(0)
-	end := c.torrent.Length()
+	end := c.cfg.StreamFile.Length()
 
 	r.SetReadahead(end / 100 * 5)
 	for at < end {
 		// reading from the torrent.Reader will download the resource asked
 		n, err := r.Read(buf)
 		if err != nil && err != io.EOF {
-			log.Fatal(err)
+			c.errChan <- err
+			return
 		}
+
 		_, err = c.input.Write(buf)
-		if err != nil {
-			log.Fatal(err)
+		if err != nil && err != io.ErrClosedPipe {
+			c.errChan <- err
+			return
 		}
 		at += int64(n)
-		select {
-		case c.progress <- at:
-		default:
+	}
+}
+
+func listenError(cmd *exec.Cmd, c chan error) {
+	if err := cmd.Wait(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+				log.Printf("Exit Status: %d", status.ExitStatus())
+			}
+		} else {
+			c <- err
 		}
 	}
-	c.done <- true
-
-	r.Close()
 }
