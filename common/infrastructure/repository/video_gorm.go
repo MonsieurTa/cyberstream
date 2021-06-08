@@ -42,6 +42,19 @@ func (m VideoGORM) FindByName(name string) (*entity.Video, error) {
 	return &video, nil
 }
 
+func (m VideoGORM) FindByHash(hash string) (*entity.Video, error) {
+	video := entity.Video{}
+
+	err := m.db.First(&video, "hash = ?", hash).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &video, nil
+}
+
 func (m VideoGORM) SearchByName(pattern string) (*entity.Video, error) {
 	video := entity.Video{}
 
