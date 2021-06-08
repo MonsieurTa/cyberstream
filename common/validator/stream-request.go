@@ -17,10 +17,7 @@ var (
 )
 
 type StreamRequestValidator struct {
-	StreamRequest struct {
-		Name   string `form:"name" json:"name" bindind:"required,min=1"`
-		Magnet string `form:"magnet" json:"magnet" bindind:"required,min=1"`
-	} `json:"stream_request"`
+	StreamRequest entity.StreamRequest `json:"stream_request"`
 
 	output entity.StreamRequest `json:"-"`
 }
@@ -40,7 +37,7 @@ func (v *StreamRequestValidator) Validate(c *gin.Context) error {
 		return err
 	}
 
-	v.output.Name = v.StreamRequest.Name
+	v.output.InfoHash = v.StreamRequest.InfoHash
 	v.output.Magnet = decryptedMagnet
 	return nil
 }
