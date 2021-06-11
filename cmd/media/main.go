@@ -4,7 +4,9 @@ import (
 	"os"
 
 	"github.com/MonsieurTa/hypertube/pkg/media/handler"
-	"github.com/MonsieurTa/hypertube/pkg/media/usecase/media"
+	"github.com/MonsieurTa/hypertube/pkg/media/usecase/iostream"
+	"github.com/MonsieurTa/hypertube/pkg/media/usecase/torrenter"
+	"github.com/MonsieurTa/hypertube/pkg/media/usecase/transcoder"
 	torrentLogger "github.com/anacrolix/log"
 	"github.com/anacrolix/torrent"
 	"github.com/gin-contrib/cors"
@@ -42,10 +44,21 @@ func main() {
 
 	router.Static("/static", os.Getenv("STATIC_FILES_PATH"))
 
-	service := media.NewService(tc)
+	torrenter := torrenter.NewService(tc)
 
-	router.POST("/stream", handler.Stream(service))
-	router.GET("/content", handler.ServeContent(service))
+	bridge := iostream.NewBridge(&iostream.BridgeConfig{DataDir: os.Getenv("STATIC_FILES_PATH")})
+	iostream := iostream.NewService(bridge)
+
+	transcoder := transcoder.NewService(&transcoder.Config{
+		CoreNb: 1,
+		Url:    "localhost",
+		Port:   3010,
+	})
+
+	router.POST("/stream", handler.Stream(torrenter, transcoder, iostream))
+	router.GET("/content", handler.ServeContent(torrenter))
+
+	router.POST("/hls/:dirname/:filename", handler.HLSHandler(iostream))
 
 	router.Run(":" + os.Getenv("MEDIA_PORT"))
 }

@@ -3,7 +3,6 @@ package stream
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -76,10 +75,6 @@ func stream(endpoint string, streamReq *entity.StreamRequest) (*entity.StreamRes
 	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(string(b))
 	}
 
 	var streamResponse entity.StreamResponse

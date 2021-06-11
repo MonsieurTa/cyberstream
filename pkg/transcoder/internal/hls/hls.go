@@ -1,20 +1,17 @@
 package hls
 
 import (
+	"fmt"
 	"io"
 	"log"
-	"os"
 	"os/exec"
 	"syscall"
-	"time"
-
-	"github.com/MonsieurTa/hypertube/common/file"
-	"github.com/anacrolix/torrent"
 )
+
+const TCP_MAX_BUFFER_SIZE = 8096000
 
 type HLSConverter interface {
 	Convert()
-	WaitUntilReady() error
 	WaitUntilDone()
 	Close()
 	PlaylistPath() string
@@ -26,14 +23,15 @@ type hlsConverter struct {
 	input  *io.PipeWriter
 	ffmpeg *exec.Cmd
 
-	ready   chan bool
 	done    chan bool
 	errChan chan error
 }
 
 type Config struct {
-	StreamFile *torrent.File
-	OutputDir  string
+	Reader      io.Reader
+	Length      int64
+	PieceLength int64
+	OutputDir   string
 }
 
 func NewHLSConverter(cfg *Config) HLSConverter {
@@ -45,7 +43,6 @@ func NewHLSConverter(cfg *Config) HLSConverter {
 		cfg:     cfg,
 		input:   pipeWriter,
 		ffmpeg:  cmd,
-		ready:   make(chan bool),
 		done:    make(chan bool),
 		errChan: make(chan error),
 	}
@@ -56,25 +53,11 @@ func (c *hlsConverter) PlaylistPath() string {
 	return output
 }
 
-func (c *hlsConverter) WaitUntilReady() error {
-	for {
-		select {
-		case err := <-c.errChan:
-			return err
-		case <-c.ready:
-			return nil
-		default:
-		}
-		time.Sleep(time.Microsecond * 100)
-	}
-}
-
 func (c *hlsConverter) WaitUntilDone() {
 	<-c.done
 }
 
 func (c *hlsConverter) Close() {
-	close(c.ready)
 	close(c.done)
 	close(c.errChan)
 }
@@ -99,69 +82,47 @@ func initFfmpeg(outputDir string) *exec.Cmd {
 		"-map", "0:s",
 		"-var_stream_map", "v:0,a:0,s:0,sgroup:subtitle",
 	}
+	url := fmt.Sprintf("http://localhost:8080/hls/%s/out_%%v.m3u8", outputDir)
 	hls := []string{
 		"-f", "hls",
-		"-hls_time", "15",
+		"-hls_time", "10",
 		"-hls_list_size", "0",
 		"-hls_playlist_type", "event",
 		"-master_pl_name", "master.m3u8",
-		outputDir + "/out_%v.m3u8",
+		"-method", "POST",
+		url,
 	}
 
 	input = append(input, codecs...)
 	input = append(input, streamMap...)
 	input = append(input, hls...)
 
-	cmd := exec.Command("ffmpeg", input...)
-	return cmd
+	return exec.Command("ffmpeg", input...)
 }
 
 func (c *hlsConverter) Convert() {
-	stopGuard := make(chan bool)
-
-	os.MkdirAll(c.cfg.OutputDir, os.ModePerm)
-
 	err := c.ffmpeg.Start()
 	if err != nil {
 		c.errChan <- err
-		stopGuard <- true
 		return
 	}
 
 	go c.convert()
-
-	// ready when hls out.m3u8 is created
-	playlistPath := c.cfg.OutputDir + "/master.m3u8"
-	go guard(playlistPath, stopGuard, c.ready)
-}
-
-func guard(playlistPath string, stop, ready chan bool) {
-	for {
-		select {
-		case <-stop:
-			return
-		default:
-		}
-		if file.Exists(playlistPath) {
-			ready <- true
-			return
-		}
-		time.Sleep(time.Microsecond * 100)
-	}
 }
 
 func (c *hlsConverter) convert() {
 	go listenError(c.ffmpeg, c.errChan)
-	defer func() { c.done <- true }()
+	defer func() {
+		c.done <- true
+		c.input.Close()
+	}()
 
-	r := c.cfg.StreamFile.NewReader()
-	defer r.Close()
+	r := c.cfg.Reader
 
-	buf := make([]byte, c.cfg.StreamFile.Torrent().Info().PieceLength)
+	buf := make([]byte, TCP_MAX_BUFFER_SIZE)
 	at := int64(0)
-	end := c.cfg.StreamFile.Length()
+	end := c.cfg.Length
 
-	r.SetReadahead(end / 100 * 5)
 	for at < end {
 		// reading from the torrent.Reader will download the resource asked
 		n, err := r.Read(buf)

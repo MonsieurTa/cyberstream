@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/hex"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -12,7 +11,10 @@ import (
 	"github.com/MonsieurTa/hypertube/common/entity"
 	"github.com/MonsieurTa/hypertube/common/file"
 	"github.com/MonsieurTa/hypertube/pkg/api/common"
-	"github.com/MonsieurTa/hypertube/pkg/media/usecase/media"
+	"github.com/MonsieurTa/hypertube/pkg/media/internal/vtt"
+	"github.com/MonsieurTa/hypertube/pkg/media/usecase/iostream"
+	"github.com/MonsieurTa/hypertube/pkg/media/usecase/torrenter"
+	t "github.com/MonsieurTa/hypertube/pkg/media/usecase/transcoder"
 	"github.com/anacrolix/torrent"
 	"github.com/gin-gonic/gin"
 )
@@ -23,18 +25,57 @@ const (
 	ERR_VALIDATION     = "error_validation"
 )
 
-func Stream(service media.UseCase) gin.HandlerFunc {
+func Stream(torrenter torrenter.UseCase, transcoder t.UseCase, iostream iostream.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var streamReq entity.StreamRequest
+		var streamResp entity.StreamResponse
+		baseURL := os.Getenv("MEDIA_HOST") + ":" + os.Getenv("MEDIA_PORT")
 
 		err := common.Bind(c, &streamReq)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error_params": err.Error()})
+			streamResp.Error = err.Error()
+			c.JSON(http.StatusBadRequest, &streamResp)
 			return
 		}
 
-		streamResp := service.StreamMagnet(streamReq.Magnet)
+		streamInfo, err := torrenter.DownloadMagnet(&streamReq)
+		if err != nil {
+			streamResp.Error = err.Error()
+			c.JSON(http.StatusBadRequest, &streamResp)
+			return
+		}
 
+		streamResp.Name = streamInfo.StreamFile.Path()
+		streamResp.InfoHash = streamInfo.InfoHash
+		streamResp.Ext = streamInfo.StreamFile.Ext()
+		if streamResp.Ext == ".mkv" {
+			params := t.TranscoderParams{
+				Reader:      streamInfo.StreamFile.NewReader(),
+				FileSize:    streamInfo.StreamFile.Length(),
+				PieceLength: streamInfo.StreamFile.Torrent().Info().PieceLength,
+				DirName:     streamResp.InfoHash,
+			}
+			err := transcoder.Transcode(&params)
+			if err != nil {
+				streamResp.Error = err.Error()
+				c.JSON(http.StatusBadRequest, &streamResp)
+				return
+			}
+
+			iostream.WaitMasterPlaylist(streamResp.InfoHash, "master.m3u8")
+
+			streamResp.MediaURL = baseURL + "/static/hls/" + streamResp.InfoHash + "/master.m3u8"
+		} else {
+			streamResp.MediaURL = baseURL + "/content?hash=" + streamResp.InfoHash + "&name=" + streamResp.Name
+			if len(streamInfo.SubtitlesFiles) > 0 {
+				converter := vtt.NewVTTConverter(os.Getenv("STATIC_FILES_PATH"), streamInfo.UnwrapSubtitlesFiles())
+				filepaths := converter.Convert()
+				streamResp.SubtitlesURLs = make([]string, len(streamInfo.SubtitlesFiles))
+				for i, filepath := range filepaths {
+					streamResp.SubtitlesURLs[i] = baseURL + "/static/" + filepath
+				}
+			}
+		}
 		c.JSON(http.StatusOK, &streamResp)
 	}
 }
@@ -45,7 +86,7 @@ type ContentRequest struct {
 }
 
 // mp4
-func ServeContent(service media.UseCase) gin.HandlerFunc {
+func ServeContent(service torrenter.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cr ContentRequest
 
@@ -57,7 +98,7 @@ func ServeContent(service media.UseCase) gin.HandlerFunc {
 
 		relpath, _ := url.PathUnescape(cr.Name)
 		filePath := os.Getenv("STATIC_FILES_PATH") + "/" + relpath
-		fmt.Println(filePath)
+
 		fileExists := file.Exists(filePath)
 
 		t, torrentExists := getTorrentFromHash(service, cr.Hash)
@@ -81,7 +122,7 @@ func ServeContent(service media.UseCase) gin.HandlerFunc {
 	}
 }
 
-func getTorrentFromHash(service media.UseCase, hash string) (*torrent.Torrent, bool) {
+func getTorrentFromHash(service torrenter.UseCase, hash string) (*torrent.Torrent, bool) {
 	var hexHash [20]byte
 
 	hex, err := hex.DecodeString(hash)
@@ -90,4 +131,18 @@ func getTorrentFromHash(service media.UseCase, hash string) (*torrent.Torrent, b
 	}
 	copy(hexHash[:], hex[:20])
 	return service.Torrent(hexHash)
+}
+
+func HLSHandler(service iostream.UseCase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		fileName := c.Param("filename")
+		dirName := c.Param("dirname")
+
+		err := service.Save(dirName, fileName, c.Request.Body)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, nil)
+			return
+		}
+		c.JSON(http.StatusOK, nil)
+	}
 }
