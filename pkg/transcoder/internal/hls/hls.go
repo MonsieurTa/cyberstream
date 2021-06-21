@@ -146,8 +146,8 @@ func listenError(cmd *exec.Cmd, c chan error) {
 			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
 				log.Printf("Exit Status: %d", status.ExitStatus())
 			}
-		} else {
-			c <- err
 		}
+		c <- err
+		cmd.Process.Kill()
 	}
 }
