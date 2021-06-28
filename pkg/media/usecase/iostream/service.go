@@ -28,7 +28,10 @@ func (s *Service) Save(dirName, fileName string, r io.ReadCloser) error {
 	}
 
 	dirpath := os.Getenv("STATIC_FILES_PATH") + "/hls/" + dirName
-	os.MkdirAll(dirpath, os.ModePerm)
+	err = os.MkdirAll(dirpath, os.ModePerm)
+	if err != nil {
+		return err
+	}
 
 	filepath := dirpath + "/" + fileName
 	flags := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
