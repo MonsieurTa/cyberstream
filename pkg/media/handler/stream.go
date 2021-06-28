@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/hex"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -58,6 +59,7 @@ func Stream(torrenter torrenter.UseCase, transcoder t.UseCase, iostream iostream
 			err := transcoder.Transcode(&params)
 			if err != nil {
 				streamResp.Error = err.Error()
+				log.Println(streamResp.Error)
 				c.JSON(http.StatusBadRequest, &streamResp)
 				return
 			}
