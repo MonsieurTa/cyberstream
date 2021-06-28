@@ -20,7 +20,7 @@ func initEnv() {
 func main() {
 	initEnv()
 
-	ln, err := net.Listen("tcp", "localhost:3010")
+	ln, err := net.Listen("tcp", ":"+os.Getenv("TRANSCODER_TCP_PORT"))
 	if err != nil {
 		panic("could not listen on tcp protocol at localhost:3010")
 	}

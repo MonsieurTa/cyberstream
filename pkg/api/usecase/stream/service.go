@@ -17,7 +17,7 @@ type Service struct {
 }
 
 func NewService(repo Repository) UseCase {
-	endpoint := `http://` + os.Getenv("MEDIA_HOST") + `:` + os.Getenv("MEDIA_PORT") + `/stream`
+	endpoint := os.Getenv("MEDIA_INTERNAL_URL") + ":" + os.Getenv("MEDIA_PORT") + `/stream`
 	return &Service{endpoint, repo}
 }
 

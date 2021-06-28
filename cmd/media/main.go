@@ -51,8 +51,8 @@ func main() {
 
 	transcoder := transcoder.NewService(&transcoder.Config{
 		CoreNb: 1,
-		Url:    "localhost",
-		Port:   3010,
+		Url:    os.Getenv("TRANSCODER_PRIVATE_IP"),
+		Port:   os.Getenv("TRANSCODER_TCP_PORT"),
 	})
 
 	router.POST("/stream", handler.Stream(torrenter, transcoder, iostream))

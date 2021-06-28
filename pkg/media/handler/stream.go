@@ -29,7 +29,7 @@ func Stream(torrenter torrenter.UseCase, transcoder t.UseCase, iostream iostream
 	return func(c *gin.Context) {
 		var streamReq entity.StreamRequest
 		var streamResp entity.StreamResponse
-		baseURL := "http://" + os.Getenv("MEDIA_HOST") + ":" + os.Getenv("MEDIA_PORT")
+		baseURL := os.Getenv("MEDIA_PUBLIC_URL")
 
 		err := common.Bind(c, &streamReq)
 		if err != nil {
