@@ -22,6 +22,16 @@ func (u UserGORM) Create(user *entity.User) (uuid.UUID, error) {
 	return user.ID, nil
 }
 
+func (u UserGORM) FindByID(id uuid.UUID) (*entity.User, error) {
+	var user entity.User
+
+	err := u.db.Where("id = ?", id).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (u UserGORM) CredentialsExist(username, password string) (uuid.UUID, error) {
 	var credentials entity.Credentials
 

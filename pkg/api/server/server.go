@@ -49,27 +49,29 @@ func NewServer(db *gorm.DB, router *gin.Engine) (*Server, error) {
 }
 
 func (s *Server) MakeHandlers() {
-	secret := os.Getenv("JWT_SECRET")
+	authMiddleware := middleware.Auth(s.services.auth)
+
 	v1 := s.router.Group("/api")
 
-	v1.POST("/stream", handler.RequestStream(s.services.stream))
+	v1.POST("/stream", authMiddleware, handler.RequestStream(s.services.stream))
 
 	auth := v1.Group("/oauth")
+	auth.POST("/login", handler.Login(s.services.auth))
 	auth.POST("/token", handler.AccessTokenGeneration(s.services.auth))
 	// auth.GET("/fortytwo/callback", handler.RedirectCallback(s.services.fortytwo, s.services.state))
 	// auth.GET("/fortytwo/authorize_uri", handler.GetAuthorizeURI(s.services.fortytwo, s.services.state))
 
 	users := v1.Group("/users")
-	users.GET("/", middleware.Auth(secret))    // TODO
-	users.GET("/:id", middleware.Auth(secret)) // TODO
-	users.PATCH("/:id", middleware.Auth(secret), handler.UsersUpdate(s.services.user))
 	users.POST("/", handler.UsersRegistration(s.services.user))
+	users.GET("/", authMiddleware)    // TODO
+	users.GET("/:id", authMiddleware) // TODO
+	users.PATCH("/:id", authMiddleware, handler.UsersUpdate(s.services.user))
 
-	videos := v1.Group("/videos") // TODO
-	videos.GET("/")               // TODO
-	videos.GET("/:id")            // TODO
+	videos := v1.Group("/videos", authMiddleware) // TODO
+	videos.GET("/")                               // TODO
+	videos.GET("/:id")                            // TODO
 
-	anime := v1.Group("/jackett") // TODO
+	anime := v1.Group("/jackett", authMiddleware) // TODO
 	anime.GET("/search", handler.JackettSearch(s.services.jackett))
 	anime.GET("/categories", handler.JackettCategories(s.services.jackett))
 	anime.GET("/indexers", handler.JackettIndexers(s.services.jackett))

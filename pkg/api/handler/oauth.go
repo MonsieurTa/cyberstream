@@ -2,8 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/MonsieurTa/hypertube/common/validator"
 	"github.com/MonsieurTa/hypertube/pkg/api/common"
@@ -11,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AccessTokenGeneration(service auth.UseCase) gin.HandlerFunc {
+func Login(service auth.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		validator := validator.NewUserCredentialsValidator()
 
@@ -29,13 +27,50 @@ func AccessTokenGeneration(service auth.UseCase) gin.HandlerFunc {
 			return
 		}
 
-		expiresAt := time.Now().Add(5 * time.Minute)
-		token := service.GenerateAccessToken(userID, expiresAt)
-		secret := os.Getenv("JWT_SECRET")
-		tokenString, err := token.SignedString([]byte(secret))
+		refreshToken, err := service.NewRefreshToken(userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, common.NewError("auth", err))
+			return
 		}
-		c.Header("Authorization", `Bearer `+tokenString)
+		accessToken, err := service.NewAccessToken(userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, common.NewError("auth", err))
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"refresh_token": refreshToken,
+			"access_token":  accessToken,
+		})
+	}
+}
+
+func AccessTokenGeneration(service auth.UseCase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		v := validator.NewRefreshValidator()
+		err := v.Validate(c)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err)
+			return
+		}
+
+		tokenStr := v.Value()
+		refreshToken, err := service.ValidateRefreshToken(tokenStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err)
+			return
+		}
+
+		userID, err := service.ExtractMetadata(refreshToken, "refresh")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err)
+			return
+		}
+
+		accessToken, err := service.NewAccessToken(userID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err)
+			return
+		}
+		c.Header("Authorization", "Bearer "+accessToken)
 	}
 }
