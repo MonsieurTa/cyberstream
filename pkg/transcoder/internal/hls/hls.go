@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"os/exec"
 	"syscall"
 )
@@ -39,6 +40,8 @@ func NewHLSConverter(cfg *Config) HLSConverter {
 
 	pipeReader, pipeWriter := io.Pipe()
 	cmd.Stdin = pipeReader
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	return &hlsConverter{
 		cfg:     cfg,
 		input:   pipeWriter,
@@ -82,7 +85,7 @@ func initFfmpeg(outputDir string) *exec.Cmd {
 		"-map", "0:s",
 		"-var_stream_map", "v:0,a:0,s:0,sgroup:subtitle",
 	}
-	url := fmt.Sprintf("http://localhost:8080/hls/%s/out_%%v.m3u8", outputDir)
+	url := fmt.Sprintf("%s/hls/%s/out_%%v.m3u8", os.Getenv("MEDIA_PRIVATE_URL"), outputDir)
 	hls := []string{
 		"-f", "hls",
 		"-hls_time", "10",
