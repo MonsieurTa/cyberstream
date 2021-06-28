@@ -10,10 +10,10 @@ RUN go mod download
 
 ADD . .
 
-RUN make media
+RUN make transcoder
 
 FROM ubuntu:20.04
-COPY --from=builder /media/bin/media /bin
+COPY --from=builder /media/bin/transcoder /bin
 
 RUN apt update && apt install -y wget xz-utils
 RUN wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
@@ -22,8 +22,6 @@ RUN tar -xvf ffmpeg-release-amd64-static.tar.xz \
     && cp ffmpeg-4.4-amd64-static/ffprobe /bin \
     && rm -rf ffmpeg-release-amd64-static.tar.xz ffmpeg-4.4-amd64-static
 
-RUN mkdir /static
+EXPOSE 3010
 
-EXPOSE 8080
-
-CMD ["/bin/media"]
+CMD ["/bin/transcoder"]

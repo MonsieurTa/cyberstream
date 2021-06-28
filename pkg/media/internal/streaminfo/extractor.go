@@ -26,7 +26,6 @@ func Extract(t *torrent.Torrent) (*StreamInfo, error) {
 	}
 
 	return &StreamInfo{
-		InfoHash:       t.InfoHash().HexString(),
 		StreamFile:     streamFile,
 		SubtitlesFiles: getSubtitlesTorrentFiles(t.Files()),
 	}, nil

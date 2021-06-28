@@ -6,3 +6,6 @@ bin/*
 
 /static
 /download
+/shared-volume
+
+*.db

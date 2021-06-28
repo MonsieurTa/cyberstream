@@ -3,7 +3,6 @@ package stream
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -18,7 +17,7 @@ type Service struct {
 }
 
 func NewService(repo Repository) UseCase {
-	endpoint := `http://` + os.Getenv("MEDIA_HOST") + `:` + os.Getenv("MEDIA_PORT") + `/stream`
+	endpoint := os.Getenv("MEDIA_INTERNAL_URL") + ":" + os.Getenv("MEDIA_PORT") + `/stream`
 	return &Service{endpoint, repo}
 }
 
@@ -36,8 +35,8 @@ func (s *Service) Stream(streamReq *entity.StreamRequest) (*entity.StreamRespons
 			Name:          storedVideo.Name,
 			Ext:           filepath.Ext(storedVideo.Name),
 			InfoHash:      storedVideo.Hash,
-			MediaURL:      storedVideo.FilePath,
-			SubtitlesURLs: storedVideo.SubtitlesPaths,
+			MediaURL:      storedVideo.FileURL,
+			SubtitlesURLs: storedVideo.SubtitlesURLs,
 		}, nil
 	}
 
@@ -76,10 +75,6 @@ func stream(endpoint string, streamReq *entity.StreamRequest) (*entity.StreamRes
 	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(string(b))
 	}
 
 	var streamResponse entity.StreamResponse
