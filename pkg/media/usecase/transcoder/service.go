@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 	"net"
-	"strconv"
 	"sync"
 
 	"github.com/MonsieurTa/hypertube/common/tcp"
@@ -53,7 +52,7 @@ func (sc *safeCounter) Decrement() {
 type Config struct {
 	CoreNb int
 	Url    string
-	Port   int
+	Port   string
 }
 
 func NewService(cfg *Config) UseCase {
@@ -89,7 +88,7 @@ func (tc *transcodeClient) Transcode(tp *TranscoderParams) error {
 		return errors.New("busy")
 	}
 
-	url := tc.cfg.Url + ":" + strconv.FormatInt(int64(tc.cfg.Port), 10)
+	url := tc.cfg.Url + ":" + tc.cfg.Port
 	conn, err := net.Dial("tcp", url)
 	if err != nil {
 		return err

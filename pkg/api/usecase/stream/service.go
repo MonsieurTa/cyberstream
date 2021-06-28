@@ -35,8 +35,8 @@ func (s *Service) Stream(streamReq *entity.StreamRequest) (*entity.StreamRespons
 			Name:          storedVideo.Name,
 			Ext:           filepath.Ext(storedVideo.Name),
 			InfoHash:      storedVideo.Hash,
-			MediaURL:      storedVideo.FilePath,
-			SubtitlesURLs: storedVideo.SubtitlesPaths,
+			MediaURL:      storedVideo.FileURL,
+			SubtitlesURLs: storedVideo.SubtitlesURLs,
 		}, nil
 	}
 
