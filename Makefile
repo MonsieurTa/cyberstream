@@ -6,7 +6,7 @@ BIN_DIR = bin
 all: $(BIN_API) $(BIN_MEDIA) $(BIN_TRANSCODER)
 
 start:
-	docker-compose up -d psql
+	docker-compose -f docker/compose/docker-compose.yml up -d psql
 	sleep 3s
 	pm2 start \
 	$(BIN_DIR)/$(BIN_API) \
