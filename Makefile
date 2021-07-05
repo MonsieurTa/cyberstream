@@ -1,9 +1,10 @@
 BIN_API = api
 BIN_MEDIA = media
 BIN_TRANSCODER = transcoder
+BIN_REGULATOR = regulator
 BIN_DIR = bin
 
-all: $(BIN_API) $(BIN_MEDIA) $(BIN_TRANSCODER)
+all: $(BIN_API) $(BIN_MEDIA) $(BIN_TRANSCODER) $(BIN_REGULATOR)
 
 start:
 	docker-compose -f docker/compose/docker-compose.yml up -d psql
@@ -43,6 +44,10 @@ $(BIN_MEDIA): | $(BIN_DIR)
 $(BIN_TRANSCODER): | $(BIN_DIR)
 	go build -v -o $(BIN_TRANSCODER) cmd/$(BIN_TRANSCODER)/main.go
 	mv $(BIN_TRANSCODER) $(BIN_DIR)
+
+$(BIN_REGULATOR): | $($(BIN_DIR))
+	go build -v -o $(BIN_REGULATOR) cmd/$(BIN_REGULATOR)/main.go
+	mv $(BIN_REGULATOR) $(BIN_DIR)
 
 clean:
 	rm -rf $(BIN_DIR)/$(BIN_API) $(BIN_DIR)/$(BIN_MEDIA)
