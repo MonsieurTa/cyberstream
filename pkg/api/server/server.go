@@ -5,13 +5,11 @@ import (
 
 	"github.com/MonsieurTa/hypertube/common/infrastructure/repository"
 	"github.com/MonsieurTa/hypertube/pkg/api/handler"
-	"github.com/MonsieurTa/hypertube/pkg/api/internal/inmem"
 	"github.com/MonsieurTa/hypertube/pkg/api/middleware"
 	auth "github.com/MonsieurTa/hypertube/pkg/api/usecase/authentication"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/fortytwo"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/jackett"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/provider"
-	"github.com/MonsieurTa/hypertube/pkg/api/usecase/state"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/stream"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/user"
 	"github.com/gin-gonic/gin"
@@ -31,7 +29,6 @@ type Services struct {
 	fortytwo fortytwo.UseCase
 	jackett  jackett.UseCase
 	provider provider.UseCase
-	state    state.UseCase
 	stream   stream.UseCase
 	user     user.UseCase
 }
@@ -90,7 +87,6 @@ func registerServices(db *gorm.DB) (*Services, error) {
 
 	providerRepo := repository.NewProviderGORM(db)
 	videoRepository := repository.NewVideoGORM(db)
-	stateInMem := inmem.NewStateInMem()
 	userRepo := repository.NewUserGORM(db)
 
 	authService := auth.NewService(userRepo)
@@ -100,15 +96,13 @@ func registerServices(db *gorm.DB) (*Services, error) {
 		return nil, err
 	}
 
-	stateService := state.NewService(stateInMem)
 	streamService := stream.NewService(videoRepository)
 	userService := user.NewService(userRepo)
 	return &Services{
 		auth:     authService,
-		fortytwo: nil,
+		fortytwo: ftService,
 		jackett:  jackettService,
 		provider: providerService,
-		state:    stateService,
 		stream:   streamService,
 		user:     userService,
 	}, nil
