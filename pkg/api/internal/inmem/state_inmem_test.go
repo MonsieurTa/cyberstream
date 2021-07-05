@@ -2,13 +2,6 @@ package inmem
 
 import "testing"
 
-func TestNewStateInMem(t *testing.T) {
-	v := NewStateInMem()
-	if v == nil {
-		t.Errorf("NewStateInMem returned %v\n", v)
-	}
-}
-
 func TestStateInMem(t *testing.T) {
 	tests := [5]string{}
 	for i := 0; i < 5; i++ {
@@ -19,7 +12,7 @@ func TestStateInMem(t *testing.T) {
 		tests[i] = state
 	}
 
-	stateInMem := NewStateInMem()
+	stateInMem := StateInMem{}
 	for _, v := range tests {
 		stateInMem.Save(v)
 	}

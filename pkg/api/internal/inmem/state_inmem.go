@@ -8,30 +8,22 @@ import (
 	"io"
 )
 
-type StateInMem struct {
-	states map[string]bool
-}
+type StateInMem map[string]bool
 
 const (
 	DEFAULT_STATE_SIZE = 64
 )
 
-func NewStateInMem() *StateInMem {
-	return &StateInMem{
-		states: make(map[string]bool),
-	}
+func (s StateInMem) Save(state string) {
+	s[state] = true
 }
 
-func (s *StateInMem) Save(state string) {
-	s.states[state] = true
+func (s StateInMem) Delete(state string) {
+	delete(s, state)
 }
 
-func (s *StateInMem) Delete(state string) {
-	delete(s.states, state)
-}
-
-func (s *StateInMem) Exist(state string) error {
-	if _, ok := s.states[state]; !ok {
+func (s StateInMem) Exist(state string) error {
+	if _, ok := s[state]; !ok {
 		return errors.New("state not recognized")
 	}
 	return nil
