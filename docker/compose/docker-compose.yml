@@ -1,72 +1,58 @@
+version: '3'
+
 services:
-    reverse-proxy:
-        image: nginx
+    reverse:
+        image: jonasal/nginx-certbot:latest
         container_name: reverse_proxy
+        restart: unless-stopped
+        env_file:
+          - ./nginx-certbot.env
         ports:
-            - 80:80
-            - 443:443
+          - 80:80
+          - 443:443
         volumes:
-            - ./nginx:/etc/nginx
+          - nginx_secrets:/etc/letsencrypt
+          - ./user_conf.d:/etc/nginx/user_conf.d
     client:
         image: mrta/vuejs-client
         container_name: client
+        ports:
+            - 80:80
     psql:
         image: postgres
         container_name: psql
         volumes:
             - psql:/var/lib/psql
-        environment:
-            POSTGRES_DB: "${POSTGRES_DB}"
-            POSTGRES_USER: "${POSTGRES_USER}"
-            POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
-            POSTGRES_HOST: "${POSTGRES_HOST}"
-            POSTGRES_PORT: "${POSTGRES_PORT}"
+        env_file:
+            - ../../.env.development.local
+        ports:
+            - 5432:5432
     api:
         image: mrta/hypertube-api
         container_name: api
+        ports:
+            - 3000:3000
         restart: unless-stopped
-        environment:
-            HYPERTUBE_ENV: "production"
-            API_PORT: "${API_PORT}"
-            POSTGRES_DB: "${POSTGRES_DB}"
-            POSTGRES_USER: "${POSTGRES_USER}"
-            POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
-            POSTGRES_HOST: "${POSTGRES_HOST}"
-            POSTGRES_PORT: "${POSTGRES_PORT}"
-            AUTH_42_CLIENT_ID: "${AUTH_42_CLIENT_ID}"
-            AUTH_42_SECRET: "${AUTH_42_SECRET}"
-            AUTH_42_REDIRECT_URI: "${AUTH_42_REDIRECT_URI}"
-            AUTH_42_AUTH_URI: "${AUTH_42_AUTH_URI}"
-            JWT_SECRET: "${JWT_SECRET}"
-            MEDIA_PORT: "${MEDIA_PORT}"
-            MEDIA_INTERNAL_URL: "${MEDIA_INTERNAL_URL}"
-            AES_KEY: "${AES_KEY}"
-            JACKETT_API_URL: "${JACKETT_API_URL}"
-            JACKETT_API_KEY: "${JACKETT_API_KEY}"
+        env_file:
+            - ../../.env.development.local
         depends_on:
             - psql
     media:
         image: mrta/hypertube-media
         container_name: media
-        restart: unless-stopped
         ports:
             - 8080:8080
-        environment:
-            HYPERTUBE_ENV: "production"
-            MEDIA_PORT: "${MEDIA_PORT}"
-            MEDIA_PUBLIC_URL: "${MEDIA_PUBLIC_URL}"
-            STATIC_FILES_PATH: "${STATIC_FILES_PATH}"
-            TRANSCODER_PRIVATE_IP: "${TRANSCODER_PRIVATE_IP}"
-            TRANSCODER_TCP_PORT: "${TRANSCODER_TCP_PORT}"
+        restart: unless-stopped
+        env_file:
+            - ../../.env.development.local
     transcoder:
         image: mrta/hypertube-transcoder
-        restart: unless-stopped
-        environment:
-            HYPERTUBE_ENV: production
-            MEDIA_PRIVATE_URL: "${MEDIA_PRIVATE_URL}"
-            TRANSCODER_TCP_PORT: "${TRANSCODER_TCP_PORT}"
+        container_name: transcoder
         ports:
             - 3010:3010
+        restart: unless-stopped
+        env_file:
+            - ../../.env.development.local
         deploy:
             resources:
                 limits:
@@ -74,12 +60,13 @@ services:
     jackett:
         image: ghcr.io/linuxserver/jackett
         container_name: jackett
+        ports:
+            - 9117:9117
         restart: unless-stopped
-        environment:
-            PUID: "${PUID}"
-            PGID: "${PGID}"
-            TZ: "${TZ}"
+        env_file:
+            - ../../.env.development.local
         volumes:
             - /config/jackett/config:/config
 volumes:
     psql:
+    nginx_secrets:
