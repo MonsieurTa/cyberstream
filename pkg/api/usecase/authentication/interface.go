@@ -20,9 +20,10 @@ type Repository interface {
 
 type UseCase interface {
 	Authenticate(username, password string) (uuid.UUID, error)
-	NewRefreshToken(userID uuid.UUID) (string, error)
-	NewAccessToken(userID uuid.UUID) (string, error)
-	ExtractMetadata(token *jwt.Token, tokenType string) (uuid.UUID, error)
+	NewToken(id, from string) (*Token, error)
+	NewRefreshToken(id, from string) (string, error)
+	NewAccessToken(id, from string) (string, error)
+	ExtractMetadata(claims jwt.MapClaims, tokenType string) (TokenMeta, error)
 	UserExists(id uuid.UUID) error
 	ValidateRefreshToken(tokenStr string) (*jwt.Token, error)
 	// ValidRefreshToken(token string) bool
