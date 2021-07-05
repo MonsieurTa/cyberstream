@@ -1,10 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
-	"github.com/MonsieurTa/hypertube/common/infrastructure/database"
+	"github.com/MonsieurTa/hypertube/common/db"
 	"github.com/MonsieurTa/hypertube/common/validator"
 	"github.com/MonsieurTa/hypertube/pkg/api/server"
 	"github.com/gin-contrib/cors"
@@ -13,25 +12,6 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"gorm.io/gorm"
 )
-
-func initDB() database.Database {
-	format := "host=%s user=%s password=%s dbname=%s port=%s sslmode=disable"
-
-	db_uri := fmt.Sprintf(format,
-		os.Getenv("POSTGRES_HOST"),
-		os.Getenv("POSTGRES_USER"),
-		os.Getenv("POSTGRES_PASSWORD"),
-		os.Getenv("POSTGRES_DB"),
-		os.Getenv("POSTGRES_PORT"))
-
-	db := database.NewDBGORM(db_uri, &gorm.Config{})
-
-	err := db.Migrate()
-	if err != nil {
-		panic("failed to migrate")
-	}
-	return db
-}
 
 func initEnv() {
 	env := os.Getenv("HYPERTUBE_ENV")
@@ -44,7 +24,13 @@ func initEnv() {
 func main() {
 	initEnv()
 
-	db := initDB()
+	db := db.InitDB(&db.PSQLConfig{
+		Host:     os.Getenv("POSTGRES_HOST"),
+		User:     os.Getenv("POSTGRES_USER"),
+		Password: os.Getenv("POSTGRES_PASSWORD"),
+		Db:       os.Getenv("POSTGRES_DB"),
+		Port:     os.Getenv("POSTGRES_PORT"),
+	}, &gorm.Config{})
 
 	router := gin.Default()
 
