@@ -3,25 +3,18 @@ package fortytwo
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 
+	"github.com/MonsieurTa/hypertube/pkg/api/internal/inmem"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
 type Service struct {
 	client *http.Client
-}
-
-type Token struct {
-	AccessToken  string `json:"access_token"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in"`
-	RefreshToken string `json:"refresh_token"`
+	state  inmem.StateInMem
 }
 
 func NewService() (*Service, error) {
@@ -31,52 +24,31 @@ func NewService() (*Service, error) {
 	}
 	return &Service{
 		client: authClient,
+		state:  inmem.StateInMem{},
 	}, nil
 }
 
-func (s *Service) GetAccessToken(code, state string) (*Token, error) {
-	form := url.Values{
-		"grant_type":    {"authorization_code"},
-		"client_id":     {os.Getenv("AUTH_42_CLIENT_ID")},
-		"client_secret": {os.Getenv("AUTH_42_SECRET")},
-		"code":          {code},
-		"redirect_uri":  {os.Getenv("AUTH_42_REDIRECT_URI")},
-		"state":         {state},
-	}
-
-	resp, err := s.client.PostForm("https://api.intra.42.fr/oauth/token", form)
+func (s *Service) GetAuthorizeURI() (string, error) {
+	state, err := inmem.GenerateState()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-
+	baseUrl, err := url.Parse(os.Getenv("AUTH_42_AUTH_URI"))
 	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != 200 {
-		return nil, errors.New(string(body))
+		return "", err
 	}
 
-	var token Token
-	err = json.Unmarshal(body, &token)
-	if err != nil {
-		return nil, err
-	}
-	return &token, nil
-}
+	params := url.Values{}
+	params.Add("client_id", os.Getenv("AUTH_42_CLIENT_ID"))
+	params.Add("redirect_uri", os.Getenv("AUTH_42_REDIRECT_URI"))
+	params.Add("state", state)
+	params.Add("response_type", "code")
 
-func (s *Service) GetAuthorizeURI(state string) (string, error) {
-	params := "client_id=%s&redirect_uri=%s&state=%s&response_type=code"
-	params = fmt.Sprintf(
-		params,
-		os.Getenv("AUTH_42_CLIENT_ID"),
-		os.Getenv("AUTH_42_REDIRECT_URI"),
-		state,
-	)
-	rv := os.Getenv("AUTH_42_AUTH_URI") + "?" + params
-	return rv, nil
+	baseUrl.RawQuery = params.Encode()
+
+	s.state.Save(state)
+	return baseUrl.String(), nil
 }
 
 func createAuthClient() (*http.Client, error) {
