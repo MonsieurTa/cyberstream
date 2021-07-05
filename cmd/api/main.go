@@ -47,7 +47,14 @@ func main() {
 	db := initDB()
 
 	router := gin.Default()
-	router.Use(cors.Default())
+
+	cfg := cors.DefaultConfig()
+	cfg.AddExposeHeaders("Authorization")
+	cfg.AddAllowHeaders("Authorization")
+	cfg.AllowOrigins = []string{"http://localhost:8081", "https://cyberstream.digital"}
+	cfg.AllowCredentials = true
+
+	router.Use(cors.New(cfg))
 
 	if ok := validator.RegisterCustomValidations(router); !ok {
 		panic("could not register custom validations")
