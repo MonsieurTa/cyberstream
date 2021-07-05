@@ -46,31 +46,30 @@ func Login(service auth.UseCase) gin.HandlerFunc {
 
 func AccessTokenGeneration(service auth.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		v := validator.NewRefreshValidator()
-		err := v.Validate(c)
+		jwtStr, err := c.Cookie("refresh_token")
 		if err != nil {
-			c.JSON(http.StatusBadRequest, err)
+			c.Status(http.StatusUnauthorized)
 			return
 		}
 
-		tokenStr := v.Value()
-		refreshToken, err := service.ValidateRefreshToken(tokenStr)
+		rt, err := service.ValidateRefreshToken(jwtStr)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, err)
+			c.Status(http.StatusUnauthorized)
 			return
 		}
 
-		userID, err := service.ExtractMetadata(refreshToken, "refresh")
+		meta, err := service.ExtractMetadata(rt.Claims.(jwt.MapClaims), "refresh")
 		if err != nil {
-			c.JSON(http.StatusBadRequest, err)
+			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		accessToken, err := service.NewAccessToken(userID)
+		accessToken, err := service.NewAccessToken(meta["id"], meta["from"])
 		if err != nil {
-			c.JSON(http.StatusBadRequest, err)
+			c.Status(http.StatusBadRequest)
 			return
 		}
 		c.Header("Authorization", "Bearer "+accessToken)
+		c.Status(http.StatusOK)
 	}
 }
