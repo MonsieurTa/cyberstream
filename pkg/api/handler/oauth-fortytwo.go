@@ -5,13 +5,12 @@ import (
 	"net/http"
 
 	"github.com/MonsieurTa/hypertube/pkg/api/common"
-	"github.com/MonsieurTa/hypertube/pkg/api/internal/inmem"
+	"github.com/MonsieurTa/hypertube/pkg/api/usecase/authentication"
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/fortytwo"
-	"github.com/MonsieurTa/hypertube/pkg/api/usecase/state"
 	"github.com/gin-gonic/gin"
 )
 
-func RedirectCallback(ftService fortytwo.UseCase, stateService state.UseCase) gin.HandlerFunc {
+func RedirectCallback(ft fortytwo.UseCase, auth authentication.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// TODO: create a specific validator
 		code := c.Query("code")
@@ -21,39 +20,40 @@ func RedirectCallback(ftService fortytwo.UseCase, stateService state.UseCase) gi
 			return
 		}
 
-		if err := stateService.Validate(state); err != nil {
-			cerr := common.NewError("auth", err)
-			c.JSON(http.StatusUnauthorized, cerr)
-			return
-		}
-		stateService.Delete(state)
-
-		token, err := ftService.GetAccessToken(code, state)
+		token, err := ft.GetToken(code, state)
 		if err != nil {
 			cerr := common.NewError("auth", err)
 			c.JSON(http.StatusUnauthorized, cerr)
 			return
 		}
-		c.JSON(http.StatusOK, token)
-	}
-}
 
-func GetAuthorizeURI(ftService fortytwo.UseCase, stateService state.UseCase) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		state, err := inmem.GenerateState()
-		if err != nil {
-			cerr := common.NewError("auth", err)
-			c.JSON(http.StatusInternalServerError, cerr)
-			return
-		}
-
-		uri, err := ftService.GetAuthorizeURI(state)
+		userInfo, err := ft.GetUserInfo(token.AccessToken)
 		if err != nil {
 			cerr := common.NewError("auth", err)
 			c.JSON(http.StatusBadRequest, cerr)
 			return
 		}
-		stateService.Save(state)
+
+		t, err := auth.NewToken(userInfo.Login, "42")
+		if err != nil {
+			cerr := common.NewError("auth", err)
+			c.JSON(http.StatusBadRequest, cerr)
+			return
+		}
+		c.SetCookie("refresh_token", t.RefreshToken, 60*60*24, "/", "", true, true)
+		c.Header("Authorization", "Bearer "+t.AccessToken)
+		c.Status(http.StatusOK)
+	}
+}
+
+func GetAuthorizeURI(ftService fortytwo.UseCase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		uri, err := ftService.GetAuthorizeURI()
+		if err != nil {
+			cerr := common.NewError("auth", err)
+			c.JSON(http.StatusBadRequest, cerr)
+			return
+		}
 		c.JSON(http.StatusOK, uri)
 	}
 }
