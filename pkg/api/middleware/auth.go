@@ -1,14 +1,15 @@
 package middleware
 
 import (
-	"errors"
+	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/MonsieurTa/hypertube/pkg/api/usecase/authentication"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/dgrijalva/jwt-go/request"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func secretGiver(secret string) jwt.Keyfunc {
@@ -20,30 +21,61 @@ func secretGiver(secret string) jwt.Keyfunc {
 
 func Auth(service authentication.UseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		secret := os.Getenv("JWT_SECRET")
-		claims := &jwt.MapClaims{}
+		authField, ok := c.Request.Header["Authorization"]
 
-		token, err := request.ParseFromRequest(c.Request, request.OAuth2Extractor, secretGiver(secret), request.WithClaims(claims))
-		if err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
+		if !ok || len(authField) == 0 {
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
-		if !token.Valid {
-			c.AbortWithError(http.StatusBadRequest, errors.New("invalid token"))
+		s := strings.Split(authField[0], "Bearer ")
+		if len(s) != 2 {
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
-		userID, err := service.ExtractMetadata(token, "access")
+		err := validateToken(s[1], service)
 		if err != nil {
-			c.AbortWithError(http.StatusUnauthorized, err)
-			return
-		}
-
-		err = service.UserExists(userID)
-		if err != nil {
-			c.AbortWithError(http.StatusUnauthorized, err)
+			log.Println(err)
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 	}
+}
+
+func validateToken(tokenStr string, service authentication.UseCase) error {
+	secret := os.Getenv("JWT_SECRET")
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims, secretGiver(secret))
+	if err != nil {
+		return err
+	}
+
+	if !token.Valid {
+		return err
+	}
+
+	meta, err := service.ExtractMetadata(claims, "access")
+	if err != nil {
+		return err
+	}
+
+	from, ok := meta["from"]
+	if ok {
+		if from != "42" && from != "" {
+			return err
+		}
+		return nil
+	}
+
+	id, err := uuid.Parse(meta["user_id"])
+	if err != nil {
+		return err
+	}
+
+	err = service.UserExists(id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
