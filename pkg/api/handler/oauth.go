@@ -6,6 +6,7 @@ import (
 	"github.com/MonsieurTa/hypertube/common/validator"
 	"github.com/MonsieurTa/hypertube/pkg/api/common"
 	auth "github.com/MonsieurTa/hypertube/pkg/api/usecase/authentication"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,16 +28,18 @@ func Login(service auth.UseCase) gin.HandlerFunc {
 			return
 		}
 
-		refreshToken, err := service.NewRefreshToken(userID)
+		refreshToken, err := service.NewRefreshToken(userID.String(), "")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, common.NewError("auth", err))
 			return
 		}
-		accessToken, err := service.NewAccessToken(userID)
+		accessToken, err := service.NewAccessToken(userID.String(), "")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, common.NewError("auth", err))
 			return
 		}
+
+		// TODO DON'T SEND THEM VIA BODY
 		c.JSON(http.StatusOK, gin.H{
 			"refresh_token": refreshToken,
 			"access_token":  accessToken,
