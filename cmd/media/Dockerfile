@@ -10,12 +10,14 @@ RUN go mod download
 
 ADD . .
 
-RUN make media
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    make media && make regulator
 
 FROM ubuntu:20.04
 COPY --from=builder /media/bin/media /bin
+COPY --from=builder /media/bin/regulator /bin
 
-RUN apt update && apt install -y wget xz-utils
+RUN apt update && apt install -y wget xz-utils ca-certificates
 RUN wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
 RUN tar -xvf ffmpeg-release-amd64-static.tar.xz \
     && cp ffmpeg-4.4-amd64-static/ffmpeg /bin \
@@ -23,6 +25,8 @@ RUN tar -xvf ffmpeg-release-amd64-static.tar.xz \
     && rm -rf ffmpeg-release-amd64-static.tar.xz ffmpeg-4.4-amd64-static
 
 RUN mkdir /static
+
+COPY ./scripts/cron.hourly/regulate /etc/cron.hourly
 
 EXPOSE 8080
 
