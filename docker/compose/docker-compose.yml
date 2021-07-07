@@ -8,7 +8,6 @@ services:
         env_file:
           - ./nginx-certbot.env
         ports:
-          - 80:80
           - 443:443
         volumes:
           - nginx_secrets:/etc/letsencrypt
@@ -16,17 +15,15 @@ services:
     client:
         image: mrta/vuejs-client
         container_name: client
-        ports:
-            - 80:80
     psql:
         image: postgres
         container_name: psql
+        ports:
+            - 5432:5432
         volumes:
             - psql:/var/lib/psql
         env_file:
             - ../../.env.development.local
-        ports:
-            - 5432:5432
     api:
         image: mrta/hypertube-api
         container_name: api
@@ -41,7 +38,7 @@ services:
         image: mrta/hypertube-media
         container_name: media
         ports:
-            - 8080:8080
+        - 8080:8080
         restart: unless-stopped
         env_file:
             - ../../.env.development.local
@@ -60,8 +57,6 @@ services:
     jackett:
         image: ghcr.io/linuxserver/jackett
         container_name: jackett
-        ports:
-            - 9117:9117
         restart: unless-stopped
         env_file:
             - ../../.env.development.local
