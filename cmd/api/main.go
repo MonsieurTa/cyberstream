@@ -37,6 +37,7 @@ func main() {
 	cfg := cors.DefaultConfig()
 	cfg.AddExposeHeaders("Authorization")
 	cfg.AddAllowHeaders("Authorization")
+	cfg.AddAllowMethods("OPTIONS")
 	cfg.AllowOrigins = []string{"http://localhost:8081", "https://cyberstream.digital"}
 	cfg.AllowCredentials = true
 
