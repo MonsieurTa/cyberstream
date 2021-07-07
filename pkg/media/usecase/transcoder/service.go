@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/MonsieurTa/hypertube/common/tcp"
 	"github.com/anacrolix/torrent"
@@ -112,13 +113,19 @@ func (tc *transcodeClient) Transcode(tp *TranscoderParams) error {
 		conn.Write(b)
 		conn.Write(header.DirName)
 
-		at := int64(0)
+		at := 0
+		end := int(tp.FileSize)
 		buf := make([]byte, TCP_MAX_BUFFER_SIZE)
 		r := tp.Reader
-		for at < tp.FileSize {
+		for at < end {
 			n, _ := r.Read(buf)
-			conn.Write(buf)
-			at += int64(n)
+
+			conn.SetWriteDeadline(time.Now().Add(time.Second * 10))
+			_, err := conn.Write(buf)
+			if err != nil {
+				break
+			}
+			at += n
 		}
 		log.Printf("media: %d bytes sent\n", tp.FileSize)
 	}()
