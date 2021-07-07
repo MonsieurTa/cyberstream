@@ -82,7 +82,7 @@ func initFfmpeg(outputDir string) *exec.Cmd {
 	streamMap := []string{
 		"-map", "0:v",
 		"-map", "0:a",
-		"-map", "0:s",
+		"-map", "0:s?",
 		"-var_stream_map", "v:0,a:0,s:0,sgroup:subtitle",
 	}
 	url := fmt.Sprintf("%s/hls/%s/out_%%v.m3u8", os.Getenv("MEDIA_PRIVATE_URL"), outputDir)
