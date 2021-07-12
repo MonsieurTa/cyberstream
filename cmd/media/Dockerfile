@@ -26,7 +26,8 @@ RUN tar -xvf ffmpeg-release-amd64-static.tar.xz \
 
 RUN mkdir /static
 
-COPY ./scripts/cron.hourly/regulate /etc/cron.hourly
+COPY ./scripts/cron.hourly/regulate /etc/cron.hourly/regulate
+RUN chmod +x /etc/cron.hourly/regulate
 
 EXPOSE 8080
 
