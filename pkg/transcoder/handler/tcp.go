@@ -14,7 +14,11 @@ func TCPHandler(conn net.Conn) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("transcoder: received header\n%v\n", header)
+
+	log.Println("transcoder: received header")
+	log.Println("\tname:", string(header.DirName))
+	log.Println("\tfile size:", header.FileSize)
+
 	c := hls.NewHLSConverter(&hls.Config{
 		Reader:      conn,
 		Length:      int64(header.FileSize),
