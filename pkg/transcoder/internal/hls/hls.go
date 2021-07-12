@@ -125,16 +125,14 @@ func (c *hlsConverter) convert() {
 	buf := make([]byte, TCP_MAX_BUFFER_SIZE)
 	at := int64(0)
 	end := c.cfg.Length
-
 	for at < end {
-		// reading from the torrent.Reader will download the resource asked
 		n, err := r.Read(buf)
 		if err != nil && err != io.EOF {
 			c.errChan <- err
 			return
 		}
 
-		_, err = c.input.Write(buf)
+		_, err = c.input.Write(buf[:n])
 		if err != nil && err != io.ErrClosedPipe {
 			c.errChan <- err
 			return
