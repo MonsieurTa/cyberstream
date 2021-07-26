@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/MonsieurTa/hypertube/common/tcp"
 	"github.com/anacrolix/torrent"
@@ -123,6 +124,7 @@ func (tc *transcodeClient) Transcode(tp *TranscoderParams) error {
 				break
 			}
 
+			conn.SetWriteDeadline(time.Now().Add(time.Second * 30))
 			_, err = conn.Write(buf[:n])
 			if err != nil {
 				log.Println(err.Error())
