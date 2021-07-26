@@ -11,10 +11,11 @@ RUN go mod download
 ADD . .
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    make api
+    make api && make hyperdb
 
 FROM ubuntu:20.04
 COPY --from=builder /api/bin/api /bin
+COPY --from=builder /api/bin/hyperdb /bin
 
 RUN apt update -y && apt install -y ca-certificates
 

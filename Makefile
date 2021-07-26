@@ -2,6 +2,7 @@ BIN_API = api
 BIN_MEDIA = media
 BIN_TRANSCODER = transcoder
 BIN_REGULATOR = regulator
+BIN_HYPERDB = hyperdb
 BIN_DIR = bin
 
 all: $(BIN_API) $(BIN_MEDIA) $(BIN_TRANSCODER) $(BIN_REGULATOR)
@@ -48,6 +49,10 @@ $(BIN_TRANSCODER): | $(BIN_DIR)
 $(BIN_REGULATOR): | $($(BIN_DIR))
 	go build -v -o $(BIN_REGULATOR) cmd/$(BIN_REGULATOR)/main.go
 	mv $(BIN_REGULATOR) $(BIN_DIR)
+
+$(BIN_HYPERDB): | $($(BIN_DIR))
+	go build -v -o $(BIN_HYPERDB) cmd/$(BIN_HYPERDB)/main.go
+	mv $(BIN_HYPERDB) $(BIN_DIR)
 
 clean:
 	rm -rf $(BIN_DIR)/$(BIN_API) $(BIN_DIR)/$(BIN_MEDIA)
