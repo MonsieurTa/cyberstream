@@ -58,6 +58,8 @@ services:
         image: ghcr.io/linuxserver/jackett
         container_name: jackett
         restart: unless-stopped
+        ports:
+            - 9117:9117
         env_file:
             - ../../.env.development.local
         volumes:
