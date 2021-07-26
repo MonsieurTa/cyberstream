@@ -28,22 +28,15 @@ func Login(service auth.UseCase) gin.HandlerFunc {
 			return
 		}
 
-		refreshToken, err := service.NewRefreshToken(userID.String(), "")
+		t, err := service.NewToken(userID.String(), "")
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, common.NewError("auth", err))
+			cerr := common.NewError("auth", err)
+			c.JSON(http.StatusBadRequest, cerr)
 			return
 		}
-		accessToken, err := service.NewAccessToken(userID.String(), "")
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, common.NewError("auth", err))
-			return
-		}
-
-		// TODO DON'T SEND THEM VIA BODY
-		c.JSON(http.StatusOK, gin.H{
-			"refresh_token": refreshToken,
-			"access_token":  accessToken,
-		})
+		c.SetCookie("refresh_token", t.RefreshToken, 60*60*24, "/", "", true, true)
+		c.Header("Authorization", "Bearer "+t.AccessToken)
+		c.Status(http.StatusOK)
 	}
 }
 
