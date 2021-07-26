@@ -3,6 +3,7 @@ package stream
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -82,6 +83,9 @@ func stream(endpoint string, streamReq *entity.StreamRequest) (*entity.StreamRes
 	err = json.Unmarshal(b, &streamResponse)
 	if err != nil {
 		return nil, err
+	}
+	if len(streamResponse.Error) > 0 {
+		return nil, errors.New(streamResponse.Error)
 	}
 	return &streamResponse, nil
 }
